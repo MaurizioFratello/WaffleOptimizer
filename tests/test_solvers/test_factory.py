@@ -29,12 +29,6 @@ class TestSolverFactory(unittest.TestCase):
         self.assertIsInstance(solver, PulpSolver)
         self.assertEqual(solver.solver_name, 'GLPK')
     
-    def test_create_pulp_highs_solver(self):
-        """Test creating a PuLP HiGHS solver."""
-        solver = SolverFactory.create_solver('pulp_highs')
-        self.assertIsInstance(solver, PulpSolver)
-        self.assertEqual(solver.solver_name, 'HiGHS')
-    
     def test_create_ortools_solver(self):
         """Test creating an OR-Tools solver."""
         solver = SolverFactory.create_solver('ortools')
@@ -47,7 +41,7 @@ class TestSolverFactory(unittest.TestCase):
     
     def test_solver_interface(self):
         """Test that all created solvers implement the SolverInterface."""
-        available_solvers = ['cbc', 'glpk', 'pulp_highs', 'ortools']
+        available_solvers = ['cbc', 'glpk', 'ortools', 'scip', 'coin_cmd']
         
         for solver_name in available_solvers:
             solver = SolverFactory.create_solver(solver_name)

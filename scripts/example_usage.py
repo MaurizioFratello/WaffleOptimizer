@@ -202,7 +202,7 @@ def compare_solvers_example():
     optimization_data = data_processor.get_optimization_data()
     
     # Solvers to compare
-    solvers = ["cbc", "glpk", "pulp_highs", "ortools"]
+    solvers = ["cbc", "glpk", "ortools", "scip", "coin_cmd"]
     
     # Compare solvers
     print("\nComparing solvers for minimize cost objective:")

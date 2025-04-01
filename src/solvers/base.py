@@ -82,7 +82,6 @@ class SolverFactory:
             'ortools': ORToolsSolver,
             'cbc': lambda **kwargs: PulpSolver(solver_name='CBC', **kwargs),
             'glpk': lambda **kwargs: PulpSolver(solver_name='GLPK', **kwargs),
-            'pulp_highs': lambda **kwargs: PulpSolver(solver_name='HiGHS', **kwargs),
             'scip': lambda **kwargs: PulpSolver(solver_name='SCIP', **kwargs),
             'coin_cmd': lambda **kwargs: PulpSolver(solver_name='COIN_CMD', **kwargs),
             # Additional solvers can be added here

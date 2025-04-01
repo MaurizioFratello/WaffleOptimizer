@@ -114,7 +114,7 @@ def get_user_config():
     
     # Solver
     print(f"Solver (default: {defaults['solver']})")
-    print("Available options: ortools, cbc, glpk, pulp_highs, scip, coin_cmd")
+    print("Available options: ortools, cbc, glpk, scip, coin_cmd")
     solver = input("> ").strip().lower() or defaults['solver']
     config['solver'] = solver
     

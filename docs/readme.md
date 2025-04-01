@@ -85,7 +85,7 @@ python main.py --objective cost --solver cbc --time-limit 60 --output data/outpu
 
 Available arguments:
 - `--objective`: Choose between `cost` (minimize cost) or `output` (maximize output)
-- `--solver`: Solver to use (`cbc`, `glpk`, `pulp_highs`, `ortools`, etc.)
+- `--solver`: Solver to use (`cbc`, `glpk`, `ortools`, `scip`, `coin_cmd`)
 - `--time-limit`: Time limit for optimization in seconds
 - `--gap`: Optimality gap tolerance
 - `--debug`: Enable debug output
