@@ -73,6 +73,7 @@ class ORToolsSolver(SolverInterface):
                         self.variables[(w, p, t)] = self.solver.IntVar(0, self.solver.infinity(), var_name)
         
         # Objective function: minimize total cost
+        # Cost is calculated as: (number of pans) * (waffles per pan) * (cost per waffle)
         objective_expr = self.solver.Objective()
         for (w, p, t), var in self.variables.items():
             objective_expr.SetCoefficient(var, cost.get((w, p), 0) * wpp.get(w, 0))
@@ -80,10 +81,11 @@ class ORToolsSolver(SolverInterface):
         self.objective = objective_expr
         
         # Constraint 1: Demand satisfaction for each waffle type in each week
+        # Using equality constraint (==) to use exactly the demanded number of pans
         for w in waffle_types:
             for t in weeks:
                 if (w, t) in demand:
-                    constraint = self.solver.Constraint(demand[(w, t)], self.solver.infinity())
+                    constraint = self.solver.Constraint(demand[(w, t)], demand[(w, t)])
                     for p in pan_types:
                         if (w, p, t) in self.variables:
                             constraint.SetCoefficient(self.variables[(w, p, t)], 1)
@@ -154,15 +156,13 @@ class ORToolsSolver(SolverInterface):
         self.objective = objective_expr
         
         # Constraint 1: Demand satisfaction for each waffle type in each week
+        # For maximizing output, we always use equality constraints to ensure we use exactly
+        # the number of pans demanded (not more or less)
         for w in waffle_types:
             for t in weeks:
                 if (w, t) in demand:
-                    if limit_to_demand:
-                        # Equality constraint (exactly meet demand)
-                        constraint = self.solver.Constraint(demand[(w, t)], demand[(w, t)])
-                    else:
-                        # Inequality constraint (at least meet demand)
-                        constraint = self.solver.Constraint(demand[(w, t)], self.solver.infinity())
+                    # Equality constraint (exactly meet demand)
+                    constraint = self.solver.Constraint(demand[(w, t)], demand[(w, t)])
                         
                     for p in pan_types:
                         if (w, p, t) in self.variables:

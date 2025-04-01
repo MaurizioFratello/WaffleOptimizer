@@ -101,6 +101,7 @@ class PulpSolver(SolverInterface):
                         self.variables[(w, p, t)] = pulp.LpVariable(var_name, lowBound=0, cat=pulp.LpInteger)
         
         # Objective function: minimize total cost
+        # Cost is calculated as: (number of pans) * (waffles per pan) * (cost per waffle)
         objective_expr = pulp.lpSum(
             cost.get((w, p), 0) * wpp.get(w, 0) * self.variables[(w, p, t)]
             for (w, p, t) in self.variables
@@ -108,13 +109,14 @@ class PulpSolver(SolverInterface):
         self.model += objective_expr
         
         # Constraint 1: Demand satisfaction for each waffle type in each week
+        # Using equality constraint (==) to use exactly the demanded number of pans
         for w in waffle_types:
             for t in weeks:
                 if (w, t) in demand:
                     constraint_expr = pulp.lpSum(
                         self.variables.get((w, p, t), 0) for p in pan_types if (w, p, t) in self.variables
                     )
-                    self.model += constraint_expr >= demand[(w, t)], f"demand_{w}_{t}"
+                    self.model += constraint_expr == demand[(w, t)], f"demand_{w}_{t}"
         
         # Constraint 2: Running pan supply - implement cumulative constraints
         # This allows unused pans from earlier weeks to be used in later weeks
@@ -176,18 +178,16 @@ class PulpSolver(SolverInterface):
         self.model += objective_expr
         
         # Constraint 1: Demand satisfaction for each waffle type in each week
+        # For maximizing output, we always use limit_to_demand=True to ensure we use exactly
+        # the number of pans demanded (not more or less)
         for w in waffle_types:
             for t in weeks:
                 if (w, t) in demand:
                     constraint_expr = pulp.lpSum(
                         self.variables.get((w, p, t), 0) for p in pan_types if (w, p, t) in self.variables
                     )
-                    if limit_to_demand:
-                        # Equality constraint (exactly meet demand)
-                        self.model += constraint_expr == demand[(w, t)], f"demand_{w}_{t}"
-                    else:
-                        # Inequality constraint (at least meet demand)
-                        self.model += constraint_expr >= demand[(w, t)], f"demand_{w}_{t}"
+                    # Always use equality constraint to use exactly the demanded number of pans
+                    self.model += constraint_expr == demand[(w, t)], f"demand_{w}_{t}"
         
         # Constraint 2: Running pan supply - implement cumulative constraints
         # This allows unused pans from earlier weeks to be used in later weeks
