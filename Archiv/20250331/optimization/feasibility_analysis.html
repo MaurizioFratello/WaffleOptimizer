@@ -1,0 +1,277 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Feasibility Check Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .header { background-color: red; 
+                          color: white; padding: 10px; text-align: center; }
+                .section { margin: 20px 0; }
+                .critical { background-color: #ffcccc; padding: 10px; border-radius: 5px; }
+                .warning { background-color: #ffffcc; padding: 10px; border-radius: 5px; }
+                .table { border-collapse: collapse; width: 100%; }
+                .table th, .table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                .table tr:nth-child(even) { background-color: #f2f2f2; }
+                .table th { padding-top: 12px; padding-bottom: 12px; background-color: #4CAF50; color: white; }
+                .infeasible { color: red; font-weight: bold; }
+                .feasible { color: green; font-weight: bold; }
+                .buffer-low { color: orange; }
+                .buffer-critical { color: red; }
+                .summary-box { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; }
+                .metric { font-size: 1.2em; margin: 5px 0; }
+                .status-icon { font-size: 1.2em; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Feasibility Check Report</h1>
+                <h2>INFEASIBLE</h2>
+            </div>
+            
+            <div class="summary-box">
+                <h3>Key Metrics</h3>
+                <div class="metric">Total Supply: 44,673 pans</div>
+                <div class="metric">Total Demand: 34,303 pans</div>
+                <div class="metric">Overall Buffer: 130.2%</div>
+                <div class="metric">Critical Issues: 158</div>
+                <div class="metric">Warnings: 0</div>
+            </div>
+            
+            <div class="section">
+                <h2>Supply vs. Demand Summary</h2>
+                <table border="1" class="dataframe table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Week</th>
+      <th>Supply</th>
+      <th>Demand</th>
+      <th>Buffer %</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Week 1</td>
+      <td>34,937</td>
+      <td>0</td>
+      <td>inf%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 10</td>
+      <td>840</td>
+      <td>1,420</td>
+      <td>2519.5%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 11</td>
+      <td>380</td>
+      <td>1,290</td>
+      <td>1334.2%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 12</td>
+      <td>50</td>
+      <td>1,230</td>
+      <td>919.0%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 13</td>
+      <td>50</td>
+      <td>1,270</td>
+      <td>695.9%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 14</td>
+      <td>50</td>
+      <td>1,260</td>
+      <td>561.2%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 15</td>
+      <td>750</td>
+      <td>1,250</td>
+      <td>480.0%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 16</td>
+      <td>50</td>
+      <td>1,190</td>
+      <td>416.5%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 17</td>
+      <td>50</td>
+      <td>1,200</td>
+      <td>367.5%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 18</td>
+      <td>50</td>
+      <td>1,190</td>
+      <td>329.3%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 19</td>
+      <td>2,000</td>
+      <td>1,180</td>
+      <td>314.2%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 2</td>
+      <td>339</td>
+      <td>0</td>
+      <td>316.9%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 20</td>
+      <td>50</td>
+      <td>1,280</td>
+      <td>287.8%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 21</td>
+      <td>50</td>
+      <td>1,290</td>
+      <td>263.4%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 22</td>
+      <td>50</td>
+      <td>1,250</td>
+      <td>243.5%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 23</td>
+      <td>50</td>
+      <td>1,280</td>
+      <td>226.1%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 24</td>
+      <td>380</td>
+      <td>1,130</td>
+      <td>214.5%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 25</td>
+      <td>50</td>
+      <td>1,120</td>
+      <td>202.6%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 26</td>
+      <td>50</td>
+      <td>1,130</td>
+      <td>191.9%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 27</td>
+      <td>50</td>
+      <td>1,130</td>
+      <td>182.3%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 28</td>
+      <td>390</td>
+      <td>1,110</td>
+      <td>175.3%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 29</td>
+      <td>50</td>
+      <td>900</td>
+      <td>168.9%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 3</td>
+      <td>50</td>
+      <td>1,498</td>
+      <td>159.3%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 4</td>
+      <td>90</td>
+      <td>1,655</td>
+      <td>149.9%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 5</td>
+      <td>675</td>
+      <td>1,400</td>
+      <td>144.9%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 6</td>
+      <td>2,982</td>
+      <td>1,350</td>
+      <td>148.4%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 7</td>
+      <td>50</td>
+      <td>1,430</td>
+      <td>141.8%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 8</td>
+      <td>60</td>
+      <td>1,430</td>
+      <td>135.8%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 9</td>
+      <td>50</td>
+      <td>1,440</td>
+      <td>130.2%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>TOTAL</td>
+      <td>44,673</td>
+      <td>34,303</td>
+      <td>130.2%</td>
+      <td>✓</td>
+    </tr>
+  </tbody>
+</table>
+            </div>
+        
+            <div class="section critical">
+                <h2>Critical Issues</h2>
+                <ul>
+            <li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 104' in week Week 3: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 105' in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 107' in week Week 3: Need 0.2 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 13' in week Week 20: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 13' in week Week 22: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 13' in week Week 26: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 13' in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 137' in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 14' in week Week 17: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 143' in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 146' in week Week 3: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 147' in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 16' in week Week 16: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 16' in weeks Week 23-Week 24: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 16' in week Week 26: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 16' in week Week 28: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 20' in week Week 15: Need 0.3 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 20' in week Week 3: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 20' in weeks Week 8-Week 9: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 21' in weeks Week 14-Week 16: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 21' in weeks Week 20-Week 29: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 21' in week Week 5: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 26' in weeks Week 15-Week 26: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 26' in week Week 3: Need 0.2 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 28' in week Week 11: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 28' in weeks Week 14-Week 25: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 28' in weeks Week 3-Week 4: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 3' in week Week 29: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 3' in week Week 4: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 30' in week Week 28: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 35' in week Week 17: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 35' in week Week 21: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 35' in week Week 25: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 35' in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 4' in week Week 5: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 42' in week Week 18: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 42' in week Week 5: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 42' in week Week 9: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 43' in weeks Week 3-Week 4: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 47' in weeks Week 13-Week 14: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 47' in weeks Week 17-Week 18: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 47' in week Week 20: Need 0.5 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 47' in week Week 26: Need 0.3 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 47' in week Week 3: Need 0.3 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 47' in weeks Week 8-Week 9: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 48' in week Week 16: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 48' in week Week 24: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 48' in week Week 4: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 5' in week Week 10: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 5' in week Week 29: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 50' in week Week 21: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 53' in week Week 11: Need 0.7 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 53' in weeks Week 13-Week 25: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 54' in week Week 4: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 56' in week Week 10: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 56' in weeks Week 13-Week 14: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 56' in week Week 16: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 56' in week Week 22: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 56' in week Week 3: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 57' in week Week 11: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 57' in weeks Week 16-Week 17: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 57' in week Week 21: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 57' in week Week 7: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 59' in weeks Week 11-Week 15: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 59' in week Week 21: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 6' in weeks Week 10-Week 18: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 6' in week Week 20: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 6' in weeks Week 22-Week 23: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 6' in week Week 5: Need 0.2 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 6' in weeks Week 7-Week 9: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 62' in week Week 10: Need 0.4 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 62' in week Week 17: Need 0.2 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 62' in week Week 21: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 62' in week Week 23: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 62' in week Week 27: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 62' in week Week 4: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 63' in weeks Week 20-Week 22: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 63' in week Week 25: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 63' in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 64' in weeks Week 10-Week 14: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 64' in weeks Week 16-Week 19: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 64' in weeks Week 21-Week 22: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 64' in week Week 24: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 64' in week Week 26: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 64' in week Week 3: Need 0.3 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 64' in week Week 5: Need 0.3 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 64' in weeks Week 7-Week 8: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 65' in week Week 13: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 65' in week Week 16: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 67' in weeks Week 10-Week 13: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 67' in weeks Week 16-Week 20: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 67' in weeks Week 25-Week 29: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 67' in weeks Week 3-Week 5: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 67' in weeks Week 7-Week 9: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 68' in week Week 13: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 7' in weeks Week 3-Week 4: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 71' in week Week 13: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 71' in week Week 16: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 71' in weeks Week 20-Week 21: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 71' in week Week 26: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 79' in weeks Week 10-Week 14: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 79' in weeks Week 17-Week 29: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 79' in week Week 4: Need 0.4 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 79' in week Week 9: Need 0.6 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 81' in weeks Week 11-Week 12: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 81' in week Week 14: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 81' in weeks Week 20-Week 21: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 81' in week Week 23: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 81' in week Week 25: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 81' in week Week 27: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 81' in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 81' in weeks Week 8-Week 9: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 82' in week Week 4: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 84' in week Week 19: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 86' in week Week 12: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 87' in week Week 10: Need 1.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 87' in weeks Week 12-Week 14: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 87' in weeks Week 16-Week 18: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 87' in weeks Week 20-Week 23: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 87' in weeks Week 25-Week 27: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 87' in week Week 4: Need 0.6 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 87' in weeks Week 7-Week 9: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 88' in weeks Week 10-Week 14: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 88' in weeks Week 21-Week 22: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 88' in weeks Week 24-Week 25: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 88' in week Week 27: Need 0.5 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 88' in week Week 29: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 88' in week Week 3: Need 0.5 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 88' in week Week 9: Need 0.2 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 89' in weeks Week 17-Week 19: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 89' in week Week 23: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 89' in week Week 26: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 89' in week Week 4: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 9' in week Week 11: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 9' in week Week 15: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 91' in week Week 13: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 91' in week Week 18: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 91' in week Week 23: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 91' in week Week 26: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 91' in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 93' in week Week 26: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 94' in week Week 11: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 94' in week Week 14: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 94' in weeks Week 20-Week 21: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 94' in weeks Week 23-Week 24: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 94' in weeks Week 27-Week 28: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 94' in week Week 5: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 95' in week Week 10: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 95' in weeks Week 12-Week 14: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 95' in week Week 17: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 95' in weeks Week 21-Week 22: Average 100.0% shortage of compatible pans.</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 95' in week Week 4: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 95' in week Week 7: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 99' in week Week 12: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 99' in week Week 16: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 99' in week Week 25: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 99' in week Week 27: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</li><li class='status-icon'>✗ Insufficient compatible pan supply for waffle 'Waffle 99' in weeks Week 7-Week 9: Average 100.0% shortage of compatible pans.</li>
+                </ul>
+            </div>
+            
+        </body>
+        </html>
+        

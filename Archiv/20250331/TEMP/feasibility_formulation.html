@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Feasibility Analysis: Mathematical Formulation</title>
+    <style>
+        body {
+            font-family: "Times New Roman", Times, serif;
+            line-height: 1.5;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            font-size: 24px;
+        }
+        h2 {
+            margin-top: 20px;
+            font-size: 18px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .equation {
+            display: block;
+            text-align: center;
+            margin: 15px 0;
+            font-style: italic;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+        .equation-number {
+            float: right;
+            font-style: normal;
+            margin-left: 10px;
+        }
+        .definition {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .math {
+            font-family: "Times New Roman", Times, serif;
+            font-style: italic;
+        }
+        .sum {
+            font-size: 18px;
+            vertical-align: middle;
+        }
+        .sub {
+            font-size: 12px;
+            vertical-align: sub;
+        }
+        .sup {
+            font-size: 12px;
+            vertical-align: super;
+        }
+    </style>
+</head>
+<body>
+    <h1>Feasibility Analysis: Mathematical Formulation</h1>
+
+    <div class="section">
+        <h2>Sets and Indices</h2>
+        <div class="definition">
+            <p>• W: Set of all weeks in the planning horizon, indexed by w</p>
+            <p>• V: Set of all waffle types, indexed by v</p>
+            <p>• P: Set of all pan types, indexed by p</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Parameters</h2>
+        <div class="definition">
+            <p>• d<sub>v,w</sub>: Demand for waffle type v ∈ V in week w ∈ W (units)</p>
+            <p>• s<sub>p,w</sub>: Supply of pan type p ∈ P in week w ∈ W (units)</p>
+            <p>• r<sub>v</sub>: Production rate for waffle type v (waffles per pan)</p>
+            <p>• α<sub>v,p</sub> ∈ {0,1}: Compatibility parameter where α<sub>v,p</sub> = 1 if waffle type v can be produced on pan type p, and 0 otherwise</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Derived Parameters</h2>
+        <div class="definition">
+            <p>• P<sub>v</sub> = {p ∈ P : α<sub>v,p</sub> = 1}: Set of compatible pans for waffle type v</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Feasibility Conditions</h2>
+
+        <h3>1. Total Supply vs. Demand Constraint</h3>
+        <p>The total supply across all weeks must meet or exceed the total demand:</p>
+        <div class="equation">
+            <span class="sum">∑</span><sub>w∈W</sub> <span class="sum">∑</span><sub>p∈P</sub> s<sub>p,w</sub> ≥ <span class="sum">∑</span><sub>w∈W</sub> <span class="sum">∑</span><sub>v∈V</sub> d<sub>v,w</sub>
+            <span class="equation-number">(1)</span>
+        </div>
+
+        <h3>2. Weekly Supply vs. Demand Constraint</h3>
+        <p>For each week, the total supply must meet or exceed the total demand:</p>
+        <div class="equation">
+            <span class="sum">∑</span><sub>p∈P</sub> s<sub>p,w</sub> ≥ <span class="sum">∑</span><sub>v∈V</sub> d<sub>v,w</sub>   ∀w ∈ W
+            <span class="equation-number">(2)</span>
+        </div>
+
+        <h3>3. Cumulative Supply vs. Demand Constraint</h3>
+        <p>The cumulative supply up to any week must meet or exceed the cumulative demand:</p>
+        <div class="equation">
+            <span class="sum">∑</span><sub>i=1</sub><sup>w</sup> <span class="sum">∑</span><sub>p∈P</sub> s<sub>p,i</sub> ≥ <span class="sum">∑</span><sub>i=1</sub><sup>w</sup> <span class="sum">∑</span><sub>v∈V</sub> d<sub>v,i</sub>   ∀w ∈ W
+            <span class="equation-number">(3)</span>
+        </div>
+
+        <h3>4. Waffle-Pan Compatibility Constraint</h3>
+        <p>For each waffle type, there must exist at least one compatible pan type:</p>
+        <div class="equation">
+            |P<sub>v</sub>| ≥ 1   ∀v ∈ V
+            <span class="equation-number">(4)</span>
+        </div>
+
+        <h3>5. Compatibility-Constrained Supply Constraint</h3>
+        <p>For each waffle type and week, the total supply of compatible pans must be sufficient to meet the demand:</p>
+        <div class="equation">
+            <span class="sum">∑</span><sub>p∈P<sub>v</sub></sub> s<sub>p,w</sub> ≥ d<sub>v,w</sub>/r<sub>v</sub>   ∀v ∈ V, w ∈ W
+            <span class="equation-number">(5)</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Assessment Metrics</h2>
+
+        <h3>Supply Buffer Ratio</h3>
+        <p>The overall supply buffer ratio is calculated as:</p>
+        <div class="equation">
+            β = (<span class="sum">∑</span><sub>w∈W</sub> <span class="sum">∑</span><sub>p∈P</sub> s<sub>p,w</sub>) / (<span class="sum">∑</span><sub>w∈W</sub> <span class="sum">∑</span><sub>v∈V</sub> d<sub>v,w</sub>) × 100%
+            <span class="equation-number">(6)</span>
+        </div>
+
+        <h3>Compatibility-Constrained Shortage</h3>
+        <p>For a given waffle type v and week w, the shortage of compatible pans is:</p>
+        <div class="equation">
+            Δ<sub>v,w</sub> = max(0, d<sub>v,w</sub>/r<sub>v</sub> - <span class="sum">∑</span><sub>p∈P<sub>v</sub></sub> s<sub>p,w</sub>)
+            <span class="equation-number">(7)</span>
+        </div>
+
+        <p>And the corresponding shortage percentage is:</p>
+        <div class="equation">
+            γ<sub>v,w</sub> = (Δ<sub>v,w</sub>)/(d<sub>v,w</sub>/r<sub>v</sub>) × 100%   if d<sub>v,w</sub>/r<sub>v</sub> > 0
+            <span class="equation-number">(8)</span>
+        </div>
+    </div>
+</body>
+</html> 

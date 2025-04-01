@@ -1,0 +1,1110 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Waffle Optimizer - Feasibility Report</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 20px;
+                    max-width: 1000px;
+                    margin: 0 auto;
+                }
+                h1 {
+                    color: #333;
+                    border-bottom: 2px solid #ddd;
+                    padding-bottom: 10px;
+                }
+                .status-container {
+                    padding: 15px;
+                    border-radius: 5px;
+                    margin-bottom: 20px;
+                    font-weight: bold;
+                    font-size: 1.2em;
+                    text-align: center;
+                }
+                .feasible {
+                    background-color: #dff0d8;
+                    color: #3c763d;
+                    border: 1px solid #d6e9c6;
+                }
+                .warning {
+                    background-color: #fcf8e3;
+                    color: #8a6d3b;
+                    border: 1px solid #faebcc;
+                }
+                .infeasible {
+                    background-color: #f2dede;
+                    color: #a94442;
+                    border: 1px solid #ebccd1;
+                }
+                .metrics-container {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                    gap: 15px;
+                    margin-bottom: 20px;
+                }
+                .metric-box {
+                    background-color: #f9f9f9;
+                    border: 1px solid #ddd;
+                    border-radius: 5px;
+                    padding: 15px;
+                }
+                .metric-box h3 {
+                    margin-top: 0;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 5px;
+                }
+                .section {
+                    margin-bottom: 30px;
+                }
+                .good {
+                    color: #3c763d;
+                }
+                .warning-text {
+                    color: #8a6d3b;
+                }
+                .critical {
+                    color: #a94442;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+                table, th, td {
+                    border: 1px solid #ddd;
+                }
+                th, td {
+                    padding: 10px;
+                    text-align: left;
+                }
+                th {
+                    background-color: #f2f2f2;
+                }
+                tr:nth-child(even) {
+                    background-color: #f9f9f9;
+                }
+                .recommendation {
+                    background-color: #e8f4f8;
+                    border-left: 5px solid #5bc0de;
+                    padding: 10px 15px;
+                    margin-bottom: 10px;
+                }
+                .download-button {
+                    display: inline-block;
+                    padding: 10px 15px;
+                    background-color: #337ab7;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    font-weight: bold;
+                    margin-top: 20px;
+                }
+                .download-button:hover {
+                    background-color: #286090;
+                }
+                .icon {
+                    font-weight: bold;
+                    margin-right: 5px;
+                }
+                pre {
+                    background-color: #f5f5f5;
+                    padding: 15px;
+                    border-radius: 5px;
+                    overflow-x: auto;
+                    font-family: monospace;
+                    white-space: pre-wrap;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Waffle Production Feasibility Assessment</h1>
+        
+            <div class="status-container infeasible">
+                <span class="icon">✗</span> INFEASIBLE
+            </div>
+        
+            <div class="section">
+                <h2>Critical Metrics</h2>
+                <div class="metrics-container">
+        
+            <div class="metric-box">
+                <h3>Supply vs Demand</h3>
+                <p>Total Supply: <span class="good">44,673</span> pans</p>
+                <p>Total Demand: 34,303 pans</p>
+                <p>Buffer: <span class="good">130.2%</span></p>
+            </div>
+        
+            <div class="metric-box">
+                <h3>Waffle Compatibility</h3>
+                <p>Status: <span class="critical">
+                    49 waffle types with limited/no compatible pans
+                </span></p>
+            </div>
+        
+            <div class="metric-box">
+                <h3>Weekly Supply Issues</h3>
+                <p>Critical Weeks: <span class="critical">25</span></p>
+                <p>Weeks with Tight Supply: <span class="warning-text">0</span></p>
+            </div>
+        
+            <div class="metric-box">
+                <h3>Compatible Supply Issues</h3>
+                <p>Waffles with Issues: <span class="critical">52</span></p>
+                <p>Total Issues: <span class="critical">158</span></p>
+            </div>
+        
+                </div>
+            </div>
+        
+            <div class="section">
+                <h2>Critical Weeks</h2>
+                <table>
+                    <tr>
+                        <th>Week(s)</th>
+                        <th>Supply</th>
+                        <th>Demand</th>
+                        <th>Supply/Demand Ratio</th>
+                    </tr>
+            
+                    <tr>
+                        <td>Weeks Week 10-Week 18</td>
+                        <td>2,270</td>
+                        <td>11,300</td>
+                        <td class="critical">19.2%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Weeks Week 20-Week 29</td>
+                        <td>1,170</td>
+                        <td>11,620</td>
+                        <td class="critical">10.3%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Weeks Week 3-Week 5</td>
+                        <td>815</td>
+                        <td>4,553</td>
+                        <td class="critical">19.0%</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>Weeks Week 7-Week 9</td>
+                        <td>160</td>
+                        <td>4,300</td>
+                        <td class="critical">3.7%</td>
+                    </tr>
+                    
+                </table>
+            </div>
+            
+            <div class="section">
+                <h2>Waffles with Limited Compatibility</h2>
+                <ul>
+            
+                <li class="critical">Waffle Waffle 102</li>
+                
+                <li class="critical">Waffle Waffle 104</li>
+                
+                <li class="critical">Waffle Waffle 106</li>
+                
+                <li class="critical">Waffle Waffle 108</li>
+                
+                <li class="critical">Waffle Waffle 109</li>
+                
+                <li class="critical">Waffle Waffle 110</li>
+                
+                <li class="critical">Waffle Waffle 124</li>
+                
+                <li class="critical">Waffle Waffle 133</li>
+                
+                <li class="critical">Waffle Waffle 136</li>
+                
+                <li class="critical">Waffle Waffle 137</li>
+                
+                <li class="critical">Waffle Waffle 139</li>
+                
+                <li class="critical">Waffle Waffle 14</li>
+                
+                <li class="critical">Waffle Waffle 142</li>
+                
+                <li class="critical">Waffle Waffle 143</li>
+                
+                <li class="critical">Waffle Waffle 147</li>
+                
+                <li class="critical">Waffle Waffle 150</li>
+                
+                <li class="critical">Waffle Waffle 16</li>
+                
+                <li class="critical">Waffle Waffle 176</li>
+                
+                <li class="critical">Waffle Waffle 183</li>
+                
+                <li class="critical">Waffle Waffle 21</li>
+                
+                <li class="critical">Waffle Waffle 26</li>
+                
+                <li class="critical">Waffle Waffle 28</li>
+                
+                <li class="critical">Waffle Waffle 3</li>
+                
+                <li class="critical">Waffle Waffle 30</li>
+                
+                <li class="critical">Waffle Waffle 35</li>
+                
+                <li class="critical">Waffle Waffle 4</li>
+                
+                <li class="critical">Waffle Waffle 42</li>
+                
+                <li class="critical">Waffle Waffle 48</li>
+                
+                <li class="critical">Waffle Waffle 5</li>
+                
+                <li class="critical">Waffle Waffle 50</li>
+                
+                <li class="critical">Waffle Waffle 51</li>
+                
+                <li class="critical">Waffle Waffle 53</li>
+                
+                <li class="critical">Waffle Waffle 54</li>
+                
+                <li class="critical">Waffle Waffle 57</li>
+                
+                <li class="critical">Waffle Waffle 59</li>
+                
+                <li class="critical">Waffle Waffle 6</li>
+                
+                <li class="critical">Waffle Waffle 63</li>
+                
+                <li class="critical">Waffle Waffle 64</li>
+                
+                <li class="critical">Waffle Waffle 67</li>
+                
+                <li class="critical">Waffle Waffle 7</li>
+                
+                <li class="critical">Waffle Waffle 71</li>
+                
+                <li class="critical">Waffle Waffle 81</li>
+                
+                <li class="critical">Waffle Waffle 82</li>
+                
+                <li class="critical">Waffle Waffle 84</li>
+                
+                <li class="critical">Waffle Waffle 9</li>
+                
+                <li class="critical">Waffle Waffle 91</li>
+                
+                <li class="critical">Waffle Waffle 93</li>
+                
+                <li class="critical">Waffle Waffle 97</li>
+                
+                <li class="critical">Waffle Waffle 99</li>
+                
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h2>Compatibility-Constrained Supply Issues</h2>
+                <table>
+                    <tr>
+                        <th>Waffle Type</th>
+                        <th>Issue</th>
+                    </tr>
+            
+                <tr>
+                    <td rowspan="1">Waffle Waffle 104</td>
+                
+                    <td class="critical">in week Week 3: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 105</td>
+                
+                    <td class="critical">in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 107</td>
+                
+                    <td class="critical">in week Week 3: Need 0.2 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="4">Waffle Waffle 13</td>
+                
+                    <td class="critical">in week Week 20: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 22: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 26: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 137</td>
+                
+                    <td class="critical">in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 14</td>
+                
+                    <td class="critical">in week Week 17: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 143</td>
+                
+                    <td class="critical">in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 146</td>
+                
+                    <td class="critical">in week Week 3: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 147</td>
+                
+                    <td class="critical">in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="4">Waffle Waffle 16</td>
+                
+                    <td class="critical">in week Week 16: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 23-Week 24: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 26: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 28: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="3">Waffle Waffle 20</td>
+                
+                    <td class="critical">in week Week 15: Need 0.3 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 3: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 8-Week 9: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="3">Waffle Waffle 21</td>
+                
+                    <td class="critical">in weeks Week 14-Week 16: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 20-Week 29: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 5: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="2">Waffle Waffle 26</td>
+                
+                    <td class="critical">in weeks Week 15-Week 26: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 3: Need 0.2 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="3">Waffle Waffle 28</td>
+                
+                    <td class="critical">in week Week 11: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 14-Week 25: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 3-Week 4: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="2">Waffle Waffle 3</td>
+                
+                    <td class="critical">in week Week 29: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 4: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 30</td>
+                
+                    <td class="critical">in week Week 28: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="4">Waffle Waffle 35</td>
+                
+                    <td class="critical">in week Week 17: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 21: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 25: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 4</td>
+                
+                    <td class="critical">in week Week 5: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="3">Waffle Waffle 42</td>
+                
+                    <td class="critical">in week Week 18: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 5: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 9: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 43</td>
+                
+                    <td class="critical">in weeks Week 3-Week 4: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="6">Waffle Waffle 47</td>
+                
+                    <td class="critical">in weeks Week 13-Week 14: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 17-Week 18: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 20: Need 0.5 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 26: Need 0.3 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 3: Need 0.3 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 8-Week 9: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="3">Waffle Waffle 48</td>
+                
+                    <td class="critical">in week Week 16: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 24: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 4: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="2">Waffle Waffle 5</td>
+                
+                    <td class="critical">in week Week 10: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 29: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 50</td>
+                
+                    <td class="critical">in week Week 21: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="2">Waffle Waffle 53</td>
+                
+                    <td class="critical">in week Week 11: Need 0.7 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 13-Week 25: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 54</td>
+                
+                    <td class="critical">in week Week 4: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="5">Waffle Waffle 56</td>
+                
+                    <td class="critical">in week Week 10: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 13-Week 14: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 16: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 22: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 3: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="4">Waffle Waffle 57</td>
+                
+                    <td class="critical">in week Week 11: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 16-Week 17: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 21: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 7: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="2">Waffle Waffle 59</td>
+                
+                    <td class="critical">in weeks Week 11-Week 15: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 21: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="5">Waffle Waffle 6</td>
+                
+                    <td class="critical">in weeks Week 10-Week 18: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 20: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 22-Week 23: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 5: Need 0.2 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 7-Week 9: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="6">Waffle Waffle 62</td>
+                
+                    <td class="critical">in week Week 10: Need 0.4 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 17: Need 0.2 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 21: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 23: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 27: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 4: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="3">Waffle Waffle 63</td>
+                
+                    <td class="critical">in weeks Week 20-Week 22: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 25: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="8">Waffle Waffle 64</td>
+                
+                    <td class="critical">in weeks Week 10-Week 14: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 16-Week 19: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 21-Week 22: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 24: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 26: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 3: Need 0.3 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 5: Need 0.3 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 7-Week 8: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="2">Waffle Waffle 65</td>
+                
+                    <td class="critical">in week Week 13: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 16: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="5">Waffle Waffle 67</td>
+                
+                    <td class="critical">in weeks Week 10-Week 13: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 16-Week 20: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 25-Week 29: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 3-Week 5: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 7-Week 9: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 68</td>
+                
+                    <td class="critical">in week Week 13: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 7</td>
+                
+                    <td class="critical">in weeks Week 3-Week 4: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="4">Waffle Waffle 71</td>
+                
+                    <td class="critical">in week Week 13: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 16: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 20-Week 21: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 26: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="4">Waffle Waffle 79</td>
+                
+                    <td class="critical">in weeks Week 10-Week 14: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 17-Week 29: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 4: Need 0.4 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 9: Need 0.6 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="8">Waffle Waffle 81</td>
+                
+                    <td class="critical">in weeks Week 11-Week 12: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 14: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 20-Week 21: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 23: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 25: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 27: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 8-Week 9: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 82</td>
+                
+                    <td class="critical">in week Week 4: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 84</td>
+                
+                    <td class="critical">in week Week 19: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 86</td>
+                
+                    <td class="critical">in week Week 12: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="7">Waffle Waffle 87</td>
+                
+                    <td class="critical">in week Week 10: Need 1.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 12-Week 14: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 16-Week 18: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 20-Week 23: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 25-Week 27: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 4: Need 0.6 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 7-Week 9: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="7">Waffle Waffle 88</td>
+                
+                    <td class="critical">in weeks Week 10-Week 14: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 21-Week 22: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 24-Week 25: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 27: Need 0.5 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 29: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 3: Need 0.5 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 9: Need 0.2 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="4">Waffle Waffle 89</td>
+                
+                    <td class="critical">in weeks Week 17-Week 19: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 23: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 26: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 4: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="2">Waffle Waffle 9</td>
+                
+                    <td class="critical">in week Week 11: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 15: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="5">Waffle Waffle 91</td>
+                
+                    <td class="critical">in week Week 13: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 18: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 23: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 26: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 3: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="1">Waffle Waffle 93</td>
+                
+                    <td class="critical">in week Week 26: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="6">Waffle Waffle 94</td>
+                
+                    <td class="critical">in week Week 11: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 14: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 20-Week 21: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 23-Week 24: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 27-Week 28: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 5: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="6">Waffle Waffle 95</td>
+                
+                    <td class="critical">in week Week 10: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 12-Week 14: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 17: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 21-Week 22: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 4: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 7: Need 0.0 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td rowspan="5">Waffle Waffle 99</td>
+                
+                    <td class="critical">in week Week 12: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 16: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 25: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in week Week 27: Need 0.1 pans but only 0.0 compatible pans available (100.0% shortage).</td>
+                </tr>
+                
+                <tr>
+                    <td class="critical">in weeks Week 7-Week 9: Average 100.0% shortage of compatible pans.</td>
+                </tr>
+                
+                </table>
+            </div>
+            
+            <div class="section">
+                <h2>Recommendations</h2>
+            
+                <div class="recommendation">Increase supply by at least 27,358 pans in critical weeks</div>
+                
+                <div class="recommendation">Shift 34,937+ pans from Week Week 1 to deficit weeks</div>
+                
+                <div class="recommendation">Add compatible pan types for 49 problematic waffle types</div>
+                
+                <div class="recommendation">Increase supply of compatible pans for 52 waffles with compatibility issues</div>
+                
+                <div class="recommendation">Consider diversifying pan compatibility for waffles with limited options</div>
+                
+            </div>
+            
+            <div class="section">
+                <h2>Concise Text Report</h2>
+                <pre>
+        === FEASIBILITY ASSESSMENT SUMMARY ===
+STATUS: ✗ INFEASIBLE
+
+CRITICAL METRICS:
+✓ Total Supply: 44,673 pans (130.2% of demand)
+✗ 49 waffle types have limited or no compatible pans
+✗ Weekly Supply Issues: 25 weeks with supply below 110% buffer
+✗ Compatibility-Constrained Supply: 52 waffle types have insufficient compatible pan supply
+
+CRITICAL WEEKS:
+✗ Week Week 10-Week 18: Supply < 19.2% of demand
+✗ Week Week 20-Week 29: Supply < 10.3% of demand
+✗ Week Week 3-Week 5: Supply < 19.0% of demand
+✗ Week Week 7-Week 9: Supply < 3.7% of demand
+
+COMPATIBILITY-CONSTRAINED SUPPLY ISSUES:
+✗ Waffle Waffle 104: Week Week 3 - 100.0% shortage of compatible pans
+✗ Waffle Waffle 105: Week Week 3 - 100.0% shortage of compatible pans
+✗ Waffle Waffle 107: Week Week 3 - 100.0% shortage of compatible pans
+✗ Waffle Waffle 13: Week Week 20 - 100.0% shortage of compatible pans
+✗ Waffle Waffle 13: Week Week 22 - 100.0% shortage of compatible pans
+  ... and 153 more compatibility issues
+
+RECOMMENDATIONS:
+• Increase supply by at least 27,358 pans in critical weeks
+• Shift 34,937+ pans from Week Week 1 to deficit weeks
+• Add compatible pan types for 49 problematic waffle types
+• Increase supply of compatible pans for 52 waffles with compatibility issues
+• Consider diversifying pan compatibility for waffles with limited options
+
+                </pre>
+            </div>
+        
+        </body>
+        </html>
+        

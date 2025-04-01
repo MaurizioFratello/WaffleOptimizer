@@ -1,0 +1,270 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Feasibility Check Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .header { background-color: green; 
+                          color: white; padding: 10px; text-align: center; }
+                .section { margin: 20px 0; }
+                .critical { background-color: #ffcccc; padding: 10px; border-radius: 5px; }
+                .warning { background-color: #ffffcc; padding: 10px; border-radius: 5px; }
+                .table { border-collapse: collapse; width: 100%; }
+                .table th, .table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                .table tr:nth-child(even) { background-color: #f2f2f2; }
+                .table th { padding-top: 12px; padding-bottom: 12px; background-color: #4CAF50; color: white; }
+                .infeasible { color: red; font-weight: bold; }
+                .feasible { color: green; font-weight: bold; }
+                .buffer-low { color: orange; }
+                .buffer-critical { color: red; }
+                .summary-box { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; }
+                .metric { font-size: 1.2em; margin: 5px 0; }
+                .status-icon { font-size: 1.2em; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Feasibility Check Report</h1>
+                <h2>FEASIBLE</h2>
+            </div>
+            
+            <div class="summary-box">
+                <h3>Key Metrics</h3>
+                <div class="metric">Total Supply: 44,673 pans</div>
+                <div class="metric">Total Demand: 34,303 pans</div>
+                <div class="metric">Overall Buffer: 130.2%</div>
+                <div class="metric">Critical Issues: 0</div>
+                <div class="metric">Warnings: 0</div>
+            </div>
+            
+            <div class="section">
+                <h2>Supply vs. Demand Summary</h2>
+                <table border="1" class="dataframe table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Week</th>
+      <th>Supply</th>
+      <th>Demand</th>
+      <th>Buffer %</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Week 1</td>
+      <td>34,937</td>
+      <td>0</td>
+      <td>inf%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 10</td>
+      <td>840</td>
+      <td>1,420</td>
+      <td>2519.5%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 11</td>
+      <td>380</td>
+      <td>1,290</td>
+      <td>1334.2%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 12</td>
+      <td>50</td>
+      <td>1,230</td>
+      <td>919.0%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 13</td>
+      <td>50</td>
+      <td>1,270</td>
+      <td>695.9%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 14</td>
+      <td>50</td>
+      <td>1,260</td>
+      <td>561.2%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 15</td>
+      <td>750</td>
+      <td>1,250</td>
+      <td>480.0%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 16</td>
+      <td>50</td>
+      <td>1,190</td>
+      <td>416.5%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 17</td>
+      <td>50</td>
+      <td>1,200</td>
+      <td>367.5%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 18</td>
+      <td>50</td>
+      <td>1,190</td>
+      <td>329.3%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 19</td>
+      <td>2,000</td>
+      <td>1,180</td>
+      <td>314.2%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 2</td>
+      <td>339</td>
+      <td>0</td>
+      <td>316.9%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 20</td>
+      <td>50</td>
+      <td>1,280</td>
+      <td>287.8%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 21</td>
+      <td>50</td>
+      <td>1,290</td>
+      <td>263.4%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 22</td>
+      <td>50</td>
+      <td>1,250</td>
+      <td>243.5%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 23</td>
+      <td>50</td>
+      <td>1,280</td>
+      <td>226.1%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 24</td>
+      <td>380</td>
+      <td>1,130</td>
+      <td>214.5%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 25</td>
+      <td>50</td>
+      <td>1,120</td>
+      <td>202.6%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 26</td>
+      <td>50</td>
+      <td>1,130</td>
+      <td>191.9%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 27</td>
+      <td>50</td>
+      <td>1,130</td>
+      <td>182.3%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 28</td>
+      <td>390</td>
+      <td>1,110</td>
+      <td>175.3%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 29</td>
+      <td>50</td>
+      <td>900</td>
+      <td>168.9%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 3</td>
+      <td>50</td>
+      <td>1,498</td>
+      <td>159.3%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 4</td>
+      <td>90</td>
+      <td>1,655</td>
+      <td>149.9%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 5</td>
+      <td>675</td>
+      <td>1,400</td>
+      <td>144.9%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 6</td>
+      <td>2,982</td>
+      <td>1,350</td>
+      <td>148.4%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 7</td>
+      <td>50</td>
+      <td>1,430</td>
+      <td>141.8%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 8</td>
+      <td>60</td>
+      <td>1,430</td>
+      <td>135.8%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>Week 9</td>
+      <td>50</td>
+      <td>1,440</td>
+      <td>130.2%</td>
+      <td>✓</td>
+    </tr>
+    <tr>
+      <td>TOTAL</td>
+      <td>44,673</td>
+      <td>34,303</td>
+      <td>130.2%</td>
+      <td>✓</td>
+    </tr>
+  </tbody>
+</table>
+            </div>
+        
+        </body>
+        </html>
+        
