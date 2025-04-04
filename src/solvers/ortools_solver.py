@@ -59,8 +59,7 @@ class ORToolsSolver(SolverInterface):
         except:
             self.solver = pywraplp.Solver.CreateSolver('CBC')
         
-        # Set time limit (in milliseconds)
-        self.solver.SetTimeLimit(self.time_limit * 1000)
+        # Time limit and optimality gap are now set in solve_model()
         
         # Create decision variables: x[waffle_type, pan_type, week]
         # Represents the number of pans of type pan_type used to cook waffle_type in week
@@ -135,8 +134,7 @@ class ORToolsSolver(SolverInterface):
         except:
             self.solver = pywraplp.Solver.CreateSolver('CBC')
         
-        # Set time limit (in milliseconds)
-        self.solver.SetTimeLimit(self.time_limit * 1000)
+        # Time limit and optimality gap are now set in solve_model()
         
         # Create decision variables: x[waffle_type, pan_type, week]
         # Represents the number of pans of type pan_type used to cook waffle_type in week
@@ -194,6 +192,16 @@ class ORToolsSolver(SolverInterface):
         if self.solver is None:
             raise ValueError("Model has not been built. Call build_minimize_cost_model or build_maximize_output_model first.")
             
+        # Set time limit (in milliseconds)
+        self.solver.SetTimeLimit(self.time_limit * 1000)
+        
+        # Set optimality gap for SCIP solver
+        if self.solver.SolverVersion() == "SCIP":
+            self.solver.SetSolverSpecificParametersAsString(f"limits/gap = {self.optimality_gap}")
+        elif self.solver.SolverVersion() == "CBC_MIXED_INTEGER_PROGRAMMING":
+            # For CBC, set relative gap tolerance
+            self.solver.SetSolverSpecificParametersAsString(f"ratioGap {self.optimality_gap}")
+        
         # Record start time
         self.start_time = time.time()
         
@@ -226,6 +234,24 @@ class ORToolsSolver(SolverInterface):
         if is_feasible:
             objective_value = self.solver.Objective().Value()
         
+        # Get best bound and calculate optimality gap
+        best_bound = None
+        gap = 0.0  # Default to 0
+        
+        if is_feasible:
+            try:
+                best_bound = self.solver.Objective().BestBound()
+                if best_bound is not None and abs(objective_value) > 1e-10:
+                    if self.model_type == 'minimize_cost':
+                        # For minimization, bound is lower than objective
+                        gap = abs(objective_value - best_bound) / abs(objective_value)
+                    else:
+                        # For maximization, bound is higher than objective
+                        gap = abs(best_bound - objective_value) / abs(objective_value)
+            except:
+                # Some solvers might not support BestBound
+                pass
+        
         # Prepare solution information
         solution_info = {
             'status': status_str,
@@ -233,7 +259,9 @@ class ORToolsSolver(SolverInterface):
             'is_feasible': is_feasible,
             'objective_value': objective_value,
             'solution_time': solution_time,
-            'solver_name': 'OR-Tools'
+            'solver_name': 'OR-Tools',
+            'best_bound': best_bound,
+            'gap': gap
         }
         
         return solution_info
