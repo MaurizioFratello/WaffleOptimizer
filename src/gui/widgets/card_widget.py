@@ -5,6 +5,8 @@ from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButto
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QIcon
 
+from ..styles import AppStyles
+
 class CardWidget(QFrame):
     """
     A card-like widget with optional title, icon, content, and action button.
@@ -44,21 +46,33 @@ class CardWidget(QFrame):
         # Add action button if provided
         if action_text:
             self.action_button = QPushButton(action_text)
+            self.action_button.setObjectName("cardActionButton")
             self.action_button.clicked.connect(self.clicked)
             self.layout.addWidget(self.action_button, alignment=Qt.AlignmentFlag.AlignRight)
         
         # Set default styling
-        self.setStyleSheet("""
-            #card {
-                background-color: white;
+        self._apply_styles()
+    
+    def _apply_styles(self):
+        """Apply the standardized styles to the card widget."""
+        self.setStyleSheet(f"""
+            #card {{
+                background-color: {AppStyles.GROUP_BACKGROUND};
                 border-radius: 8px;
                 min-height: 120px;
-                border: 1px solid #ddd;
-            }
-            #cardTitle {
-                font-size: 16px;
-                font-weight: bold;
-            }
+                border: 1px solid {AppStyles.BORDER_COLOR};
+            }}
+            #cardTitle {{
+                font-size: {AppStyles.GROUP_TITLE_SIZE};
+                font-weight: {AppStyles.GROUP_TITLE_WEIGHT};
+                color: {AppStyles.TEXT_PRIMARY};
+            }}
+            #cardActionButton {{
+                {AppStyles.get_button_style(primary=False)}
+            }}
+            #cardActionButton:hover {{
+                background-color: #f5f5f5;
+            }}
         """)
     
     def add_widget(self, widget):
@@ -79,6 +93,44 @@ class CardWidget(QFrame):
             item = self.content_container.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
+    
+    def set_content(self, widget):
+        """Set the content of the card, clearing any existing content."""
+        self.clear_content()
+        self.add_widget(widget)
+    
+    def set_status(self, status):
+        """
+        Set visual status of the card.
+        
+        Args:
+            status (str): Status value ('success', 'warning', 'error', 'neutral')
+        """
+        status_colors = {
+            'success': '#2ecc71',  # Green
+            'warning': '#f39c12',  # Orange
+            'error': '#e74c3c',    # Red
+            'neutral': '#7f8c8d',  # Gray
+        }
+        color = status_colors.get(status, status_colors['neutral'])
+        
+        self.setStyleSheet(f"""
+            #card {{
+                background-color: {AppStyles.GROUP_BACKGROUND};
+                border-radius: 8px;
+                min-height: 120px;
+                border: 1px solid {color};
+                border-left: 4px solid {color};
+            }}
+            #cardTitle {{
+                font-size: {AppStyles.GROUP_TITLE_SIZE};
+                font-weight: {AppStyles.GROUP_TITLE_WEIGHT};
+                color: {AppStyles.TEXT_PRIMARY};
+            }}
+            #cardActionButton {{
+                {AppStyles.get_button_style(primary=False)}
+            }}
+        """)
     
     def mousePressEvent(self, event):
         """Handle mouse press events to emit clicked signal."""

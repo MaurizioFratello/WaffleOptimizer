@@ -14,6 +14,7 @@ from .views.validation_dashboard_view import ValidationDashboardView
 from .views.optimization_view import OptimizationView
 from .views.results_view import ResultsView
 from .views.model_description_view import ModelDescriptionView
+from .styles import AppStyles
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -40,38 +41,18 @@ class MainWindow(QMainWindow):
         self._init_views()
         
         # Set window style
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #f0f0f0;
-            }
-            QLabel {
-                color: #333333;
-            }
-            QPushButton {
-                padding: 8px 16px;
-                border-radius: 4px;
-                background-color: #2980b9;
-                color: white;
-                border: none;
-            }
-            QPushButton:hover {
-                background-color: #3498db;
-            }
-            QPushButton:pressed {
-                background-color: #2472a4;
-            }
-        """)
+        self._apply_stylesheet()
     
     def _create_sidebar(self):
         """Create the sidebar navigation widget."""
         sidebar = QFrame()
         sidebar.setObjectName("sidebar")
-        sidebar.setFixedWidth(250)
-        sidebar.setStyleSheet("""
-            #sidebar {
-                background-color: #2c3e50;
+        sidebar.setFixedWidth(int(AppStyles.SIDEBAR_WIDTH.replace("px", "")))
+        sidebar.setStyleSheet(f"""
+            #sidebar {{
+                background-color: {AppStyles.TEXT_PRIMARY};
                 border-right: 1px solid #34495e;
-            }
+            }}
         """)
         
         layout = QVBoxLayout(sidebar)
@@ -80,7 +61,7 @@ class MainWindow(QMainWindow):
         
         # Logo/title
         logo = QLabel("Waffle Optimizer")
-        logo.setStyleSheet("""
+        logo.setStyleSheet(f"""
             color: white;
             font-size: 18px;
             padding: 20px;
@@ -90,7 +71,6 @@ class MainWindow(QMainWindow):
         
         # Navigation buttons
         nav_buttons = [
-            ("Dashboard", "dashboard"),
             ("Data", "data"),
             ("Validation", "validation"),
             ("Optimization", "optimization"),
@@ -115,18 +95,6 @@ class MainWindow(QMainWindow):
         # Add stretch to push remaining items to bottom
         layout.addStretch()
         
-        # Settings button at bottom
-        settings_btn = QPushButton("Settings")
-        settings_btn.setStyleSheet("""
-            text-align: left;
-            padding: 12px 15px;
-            border: none;
-            color: #ecf0f1;
-            background-color: transparent;
-        """)
-        settings_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        layout.addWidget(settings_btn)
-        
         return sidebar
     
     def _init_views(self):
@@ -148,7 +116,7 @@ class MainWindow(QMainWindow):
         self.content_stack.addWidget(self.model_description_view)
         
         # Set initial view
-        self._switch_view("dashboard")
+        self._switch_view("data")
     
     def _switch_view(self, view_name):
         """Switch to the specified view."""
@@ -197,4 +165,29 @@ class MainWindow(QMainWindow):
                     border: none;
                     color: #ecf0f1;
                     background-color: #34495e;
-                """) 
+                """)
+    
+    def _apply_stylesheet(self):
+        """
+        Apply the base application style sheet.
+        """
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #ecf0f1;
+            }
+            
+            QPushButton {
+                padding: 8px 15px;
+                border-radius: 3px;
+                border: 1px solid #bdc3c7;
+                background-color: white;
+            }
+            
+            QPushButton:hover {
+                background-color: #f5f5f5;
+            }
+            
+            QPushButton:pressed {
+                background-color: #2472a4;
+            }
+        """) 

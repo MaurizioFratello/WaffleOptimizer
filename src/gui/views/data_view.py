@@ -3,50 +3,38 @@ Data configuration view for the Waffle Optimizer GUI.
 """
 import os
 import pandas as pd
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+from PyQt6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, 
                           QPushButton, QFormLayout, QTabWidget,
                           QGroupBox, QCheckBox, QMessageBox)
 from PyQt6.QtCore import Qt, pyqtSignal, QSettings
 
+from ..base_view import BaseView
 from ..widgets.file_selector import FileSelector
 from ..widgets.data_table import DataTable
 
-class DataView(QWidget):
+class DataView(BaseView):
     """
     View for configuring data input files and previewing data.
     """
     data_ready = pyqtSignal(dict)  # Signal when data is loaded and validated
     
     def __init__(self, main_window=None):
-        super().__init__()
-        self.main_window = main_window
+        super().__init__(
+            title="Data Configuration",
+            description="Configure the input data files for waffle production optimization. "
+                       "All files should be in Excel (.xlsx) format.",
+            main_window=main_window
+        )
+        
         self.settings = QSettings("WaffleOptimizer", "WaffleOptimizerGUI")
         
-        # Create layout
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(20, 20, 20, 20)
-        self.layout.setSpacing(15)
+        # Initialize data components
+        self._init_data_components()
         
-        # Header
-        header = QLabel("Data Configuration")
-        header.setObjectName("viewHeader")
-        header.setStyleSheet("""
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        """)
-        self.layout.addWidget(header)
-        
-        # Description
-        description = QLabel(
-            "Configure the input data files for waffle production optimization. "
-            "All files should be in Excel (.xlsx) format."
-        )
-        description.setWordWrap(True)
-        self.layout.addWidget(description)
-        
+    def _init_data_components(self):
+        """Initialize data view specific components."""
         # Create file selectors group
-        files_group = QGroupBox("Input Files")
+        files_group = self.create_group_box("Input Files")
         form_layout = QFormLayout(files_group)
         
         # File selectors - save references for getting values later
@@ -78,10 +66,10 @@ class DataView(QWidget):
             
             form_layout.addRow(label + ":", selector)
         
-        self.layout.addWidget(files_group)
+        self.content_layout.addWidget(files_group)
         
         # Data preview
-        preview_group = QGroupBox("Data Preview")
+        preview_group = self.create_group_box("Data Preview")
         preview_layout = QVBoxLayout(preview_group)
         
         self.preview_tabs = QTabWidget()
@@ -94,34 +82,16 @@ class DataView(QWidget):
             self.preview_tabs.addTab(table, label)
         
         preview_layout.addWidget(self.preview_tabs)
-        self.layout.addWidget(preview_group)
+        self.content_layout.addWidget(preview_group)
         
         # Use default data checkbox 
         self.use_default_data = QCheckBox("Use default data from data directory")
         self.use_default_data.setChecked(False)
         self.use_default_data.toggled.connect(self._toggle_default_data)
-        self.layout.addWidget(self.use_default_data)
+        self.content_layout.addWidget(self.use_default_data)
         
-        # Action buttons
-        button_layout = QHBoxLayout()
-        
-        self.validate_button = QPushButton("Validate Data")
-        self.validate_button.clicked.connect(self._validate_data)
-        
-        self.go_to_validation_button = QPushButton("Go to Validation Dashboard")
-        self.go_to_validation_button.clicked.connect(
-            lambda: self.main_window._switch_view("validation"))
-        
-        self.go_to_optimization_button = QPushButton("Continue to Optimization")
-        self.go_to_optimization_button.clicked.connect(
-            lambda: self.main_window._switch_view("optimization"))
-        
-        button_layout.addStretch()
-        button_layout.addWidget(self.validate_button)
-        button_layout.addWidget(self.go_to_validation_button)
-        button_layout.addWidget(self.go_to_optimization_button)
-        
-        self.layout.addLayout(button_layout)
+        # Add spacer at the bottom
+        self.content_layout.addStretch()
     
     def _update_preview(self, data_type, file_path):
         """
@@ -215,21 +185,13 @@ class DataView(QWidget):
         
         # Emit signal with the data paths
         self.data_ready.emit(file_paths)
-        
-        # If main window is available, also update the validation view
-        if self.main_window and hasattr(self.main_window, 'validation_view'):
-            # Update data paths in validation view
-            self.main_window.validation_view.data_paths = file_paths
-            
-            # Run validation without showing popup
-            self.main_window.validation_view._run_validation(show_popup=False)
     
     def get_data_paths(self):
         """
         Get the current data file paths.
         
         Returns:
-            Dict of data file paths
+            dict: Dictionary of data file paths
         """
         return {key: selector.get_file_path() 
                 for key, selector in self.file_selectors.items()} 

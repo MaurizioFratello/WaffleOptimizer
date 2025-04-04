@@ -3,23 +3,28 @@ Results view for displaying optimization results.
 """
 import os
 import pandas as pd
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+from PyQt6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, 
                           QPushButton, QGridLayout, QTabWidget,
-                          QGroupBox, QComboBox, QFileDialog, QMessageBox)
+                          QGroupBox, QComboBox, QFileDialog, QMessageBox, QWidget,
+                          QStackedWidget)
 from PyQt6.QtCore import Qt
 
+from ..base_view import BaseView
 from ..widgets.card_widget import CardWidget
 from ..widgets.data_table import DataTable
 from ..controllers.optimization_controller import OptimizationController
 
-class ResultsView(QWidget):
+class ResultsView(BaseView):
     """
     View for displaying optimization results and exports.
     """
     
     def __init__(self, main_window=None):
-        super().__init__()
-        self.main_window = main_window
+        super().__init__(
+            title="Optimization Results",
+            description="View and export the results of your waffle production optimization.",
+            main_window=main_window
+        )
         
         # Reference to the optimization controller
         if main_window and hasattr(main_window, 'optimization_view'):
@@ -27,21 +32,15 @@ class ResultsView(QWidget):
         else:
             self.optimization_controller = OptimizationController()
         
-        # Create layout
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(20, 20, 20, 20)
-        self.layout.setSpacing(15)
+        # Initialize results components
+        self._init_results_components()
         
-        # Header
-        header = QLabel("Optimization Results")
-        header.setObjectName("viewHeader")
-        header.setStyleSheet("""
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        """)
-        self.layout.addWidget(header)
-        
+        # Connect to optimization controller
+        if hasattr(self.optimization_controller, 'optimization_completed'):
+            self.optimization_controller.optimization_completed.connect(self._on_optimization_completed)
+    
+    def _init_results_components(self):
+        """Initialize results view specific components."""
         # Message when no results are available
         self.no_results_label = QLabel(
             "No optimization results available. Run an optimization in the Optimization tab first."
@@ -56,8 +55,8 @@ class ResultsView(QWidget):
         
         # Initially hide results container
         self.results_container.setVisible(False)
-        self.layout.addWidget(self.no_results_label)
-        self.layout.addWidget(self.results_container)
+        self.content_layout.addWidget(self.no_results_label)
+        self.content_layout.addWidget(self.results_container)
         
         # Create results view
         self._setup_results_view()
@@ -77,11 +76,7 @@ class ResultsView(QWidget):
         button_layout.addWidget(self.export_button)
         button_layout.addWidget(self.back_button)
         
-        self.layout.addLayout(button_layout)
-        
-        # Connect to optimization controller
-        if hasattr(self.optimization_controller, 'optimization_completed'):
-            self.optimization_controller.optimization_completed.connect(self._on_optimization_completed)
+        self.content_layout.addLayout(button_layout)
     
     def _setup_results_view(self):
         """Set up the results display widgets."""
@@ -122,7 +117,7 @@ class ResultsView(QWidget):
         self.export_tab = QWidget()
         export_layout = QVBoxLayout(self.export_tab)
         
-        export_form = QGroupBox("Export Options")
+        export_form = self.create_group_box("Export Options")
         export_form_layout = QVBoxLayout(export_form)
         
         # Export format
@@ -200,25 +195,35 @@ class ResultsView(QWidget):
         Update the view with the new optimization results.
         
         Args:
-            results: Dictionary of optimization results
+            results: Dictionary containing optimization results
         """
-        # Show results container, hide no results message
+        # No more results available message
         self.no_results_label.setVisible(False)
         self.results_container.setVisible(True)
+        
+        # Enable export button
         self.export_button.setEnabled(True)
         
-        # Update summary cards
-        objective_value = results.get("objective_value", 0)
-        self._update_metric_card(self.objective_card, f"{objective_value:.2f}")
+        # Update metric cards
+        objective_value = results.get('objective_value', 0)
+        objective_type = results.get('objective_type', 'cost')
         
-        status = results.get("status", "Unknown")
+        # Format objective value with appropriate units
+        if objective_type == 'cost':
+            objective_text = f"{objective_value:.2f} EUR"
+        else:  # 'output' or any other type
+            objective_text = f"{objective_value:.0f} units"
+            
+        self._update_metric_card(self.objective_card, objective_text)
+        
+        status = results.get('status', 'Unknown')
         self._update_metric_card(self.status_card, status)
         
-        solve_time = results.get("solve_time", 0)
+        solve_time = results.get('solve_time', 0)
         self._update_metric_card(self.time_card, f"{solve_time:.2f} seconds")
         
-        gap = results.get("gap", 0)
-        self._update_metric_card(self.gap_card, f"{gap:.2%}")
+        gap = results.get('gap', 0)
+        self._update_metric_card(self.gap_card, f"{gap * 100:.2f}%")
         
         # Update production table
         if "production" in results:

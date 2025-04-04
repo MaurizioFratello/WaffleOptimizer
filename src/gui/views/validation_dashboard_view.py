@@ -5,9 +5,10 @@ This view provides comprehensive data validation and visualization.
 import os
 import pandas as pd
 import numpy as np
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+from PyQt6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, 
                           QPushButton, QFormLayout, QGridLayout,
-                          QGroupBox, QMessageBox, QScrollArea, QSizePolicy, QFrame)
+                          QGroupBox, QMessageBox, QScrollArea, QSizePolicy, QFrame, QTabWidget,
+                          QWidget)
 from PyQt6.QtCore import Qt, pyqtSignal
 
 # Import matplotlib for charts
@@ -17,6 +18,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
+from ..base_view import BaseView
 from ..widgets.card_widget import CardWidget
 from src.data.processor import DataProcessor
 from src.data.validator import DataValidator
@@ -35,25 +37,35 @@ class MatplotlibCanvas(FigureCanvas):
                                   QSizePolicy.Policy.Expanding)
         FigureCanvas.updateGeometry(self)
 
-class ValidationDashboardView(QWidget):
+class ValidationDashboardView(BaseView):
     """
     Dashboard view for visualizing data validation results and analysis.
     """
     
     def __init__(self, main_window=None):
-        super().__init__()
-        self.main_window = main_window
+        super().__init__(
+            title="Validation Dashboard",
+            description="Comprehensive analysis of data quality and optimization feasibility.",
+            main_window=main_window,
+            action_button_text="Run Validation"
+        )
+        
+        # Connect action button
+        self.action_button.clicked.connect(self._run_validation)
         
         # Data storage
         self.data_paths = {}
         self.optimization_data = None
         self.is_validated = False  # Track if validation has been run
         
-        # Create layout
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
+        # Initialize validation components
+        self._init_validation_components()
         
+        # Initialize data validator
+        self.data_validator = DataValidator(debug_mode=False)
+        
+    def _init_validation_components(self):
+        """Initialize validation dashboard specific components."""
         # Create scroll area for content
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -61,37 +73,34 @@ class ValidationDashboardView(QWidget):
         
         # Create content widget for scroll area
         content_widget = QWidget()
-        self.content_layout = QVBoxLayout(content_widget)
-        self.content_layout.setSpacing(20)
-        
-        # Header
-        header = QLabel("Validation Dashboard")
-        header.setObjectName("viewHeader")
-        header.setStyleSheet("""
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        """)
-        self.content_layout.addWidget(header)
-        
-        # Description
-        description = QLabel(
-            "Comprehensive analysis of data quality and optimization feasibility."
-        )
-        description.setWordWrap(True)
-        self.content_layout.addWidget(description)
+        scroll_content_layout = QVBoxLayout(content_widget)
+        scroll_content_layout.setSpacing(20)
         
         # Create status cards
         self.status_cards = self._create_status_cards()
-        self.content_layout.addLayout(self.status_cards)
+        scroll_content_layout.addLayout(self.status_cards)
+        
+        # Recommendations
+        self.recommendations_box = self.create_group_box("Recommendations")
+        recommendations_layout = QVBoxLayout(self.recommendations_box)
+        self.recommendations_label = QLabel("Run validation to see recommendations.")
+        self.recommendations_label.setWordWrap(True)
+        recommendations_layout.addWidget(self.recommendations_label)
+        
+        scroll_content_layout.addWidget(self.recommendations_box)
         
         # Supply vs Demand Chart
-        supply_demand_group = QGroupBox("Supply vs Demand Analysis")
+        supply_demand_group = self.create_group_box("Supply vs Demand Analysis")
         supply_demand_layout = QVBoxLayout(supply_demand_group)
         
-        self.supply_demand_canvas = MatplotlibCanvas(width=8, height=4)
-        supply_demand_layout.addWidget(self.supply_demand_canvas)
+        # Create tab widget for validation checks
+        self.validation_tabs = QTabWidget()
         
+        # Tab 1: Supply vs Demand
+        supply_demand_tab = QWidget()
+        supply_demand_tab_layout = QVBoxLayout(supply_demand_tab)
+        
+        self.supply_demand_canvas = MatplotlibCanvas(width=8, height=4)
         # Add initial message to empty chart
         ax = self.supply_demand_canvas.axes
         ax.text(0.5, 0.5, "Click 'Run Validation' to analyze data", 
@@ -101,22 +110,14 @@ class ValidationDashboardView(QWidget):
         ax.set_yticks([])
         self.supply_demand_canvas.draw()
         
-        description = QLabel(
-            "This chart compares the total demand for each waffle type with the maximum "
-            "theoretical production capacity based on available pans and WPP values."
-        )
-        description.setWordWrap(True)
-        supply_demand_layout.addWidget(description)
+        supply_demand_tab_layout.addWidget(self.supply_demand_canvas)
+        self.validation_tabs.addTab(supply_demand_tab, "Supply vs Demand")
         
-        self.content_layout.addWidget(supply_demand_group)
-        
-        # Weekly Feasibility Chart
-        weekly_group = QGroupBox("Weekly Feasibility Check")
-        weekly_layout = QVBoxLayout(weekly_group)
+        # Tab 2: Weekly Feasibility
+        weekly_tab = QWidget()
+        weekly_tab_layout = QVBoxLayout(weekly_tab)
         
         self.weekly_canvas = MatplotlibCanvas(width=8, height=4)
-        weekly_layout.addWidget(self.weekly_canvas)
-        
         # Add initial message to empty chart
         ax = self.weekly_canvas.axes
         ax.text(0.5, 0.5, "Click 'Run Validation' to analyze data", 
@@ -126,23 +127,14 @@ class ValidationDashboardView(QWidget):
         ax.set_yticks([])
         self.weekly_canvas.draw()
         
-        description = QLabel(
-            "This heatmap shows the feasibility status for each waffle type in each week. "
-            "Green indicates sufficient capacity, yellow indicates tight capacity, "
-            "and red indicates insufficient capacity."
-        )
-        description.setWordWrap(True)
-        weekly_layout.addWidget(description)
+        weekly_tab_layout.addWidget(self.weekly_canvas)
+        self.validation_tabs.addTab(weekly_tab, "Weekly Feasibility")
         
-        self.content_layout.addWidget(weekly_group)
-        
-        # Combinations Matrix
-        combinations_group = QGroupBox("Allowed Combinations Matrix")
-        combinations_layout = QVBoxLayout(combinations_group)
+        # Tab 3: Combinations Matrix
+        combinations_tab = QWidget()
+        combinations_tab_layout = QVBoxLayout(combinations_tab)
         
         self.combinations_canvas = MatplotlibCanvas(width=8, height=4)
-        combinations_layout.addWidget(self.combinations_canvas)
-        
         # Add initial message to empty chart
         ax = self.combinations_canvas.axes
         ax.text(0.5, 0.5, "Click 'Run Validation' to analyze data", 
@@ -152,50 +144,23 @@ class ValidationDashboardView(QWidget):
         ax.set_yticks([])
         self.combinations_canvas.draw()
         
+        combinations_tab_layout.addWidget(self.combinations_canvas)
+        self.validation_tabs.addTab(combinations_tab, "Combinations Matrix")
+        
+        supply_demand_layout.addWidget(self.validation_tabs)
+        
         description = QLabel(
-            "This matrix shows which waffle types can be produced on which pan types. "
-            "A filled cell indicates an allowed combination."
+            "These charts provide different validation perspectives on the data. "
+            "Click 'Run Validation' to analyze all data and populate these views."
         )
         description.setWordWrap(True)
-        combinations_layout.addWidget(description)
+        supply_demand_layout.addWidget(description)
         
-        self.content_layout.addWidget(combinations_group)
-        
-        # Recommendations
-        self.recommendations_box = QGroupBox("Recommendations")
-        recommendations_layout = QVBoxLayout(self.recommendations_box)
-        self.recommendations_label = QLabel("Run validation to see recommendations.")
-        self.recommendations_label.setWordWrap(True)
-        recommendations_layout.addWidget(self.recommendations_label)
-        
-        self.content_layout.addWidget(self.recommendations_box)
-        
-        # Add action buttons
-        button_layout = QHBoxLayout()
-        button_layout.addStretch()
-        
-        self.refresh_button = QPushButton("Refresh Data")
-        self.refresh_button.clicked.connect(self._refresh_data)
-        
-        self.validate_button = QPushButton("Run Validation")
-        self.validate_button.clicked.connect(self._run_validation)
-        
-        self.go_to_optimization_button = QPushButton("Continue to Optimization")
-        self.go_to_optimization_button.clicked.connect(
-            lambda: self.main_window._switch_view("optimization"))
-        
-        button_layout.addWidget(self.refresh_button)
-        button_layout.addWidget(self.validate_button)
-        button_layout.addWidget(self.go_to_optimization_button)
-        
-        self.content_layout.addLayout(button_layout)
+        scroll_content_layout.addWidget(supply_demand_group)
         
         # Set up scroll area
         scroll_area.setWidget(content_widget)
-        layout.addWidget(scroll_area)
-        
-        # Initialize data validator
-        self.data_validator = DataValidator(debug_mode=False)
+        self.content_layout.addWidget(scroll_area)
         
     def _create_status_cards(self):
         """Create status card widgets."""
@@ -209,39 +174,33 @@ class ValidationDashboardView(QWidget):
         feasibility_label.setStyleSheet("""
             font-size: 20px;
             font-weight: bold;
-            color: #777777;
-            margin: 10px 0;
         """)
-        self.feasibility_card.add_widget(feasibility_label)
-        self.feasibility_card.setProperty("status_label", feasibility_label)
+        self.feasibility_card.set_content(feasibility_label)
+        self.feasibility_card.set_status("neutral")
         status_layout.addWidget(self.feasibility_card, 0, 0)
         
-        # Critical issues card
-        self.critical_card = CardWidget(title="Critical Issues")
-        critical_label = QLabel("0")
-        critical_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        critical_label.setStyleSheet("""
-            font-size: 20px;
+        # Issues card
+        self.issues_card = CardWidget(title="Critical Issues")
+        issues_label = QLabel("0")
+        issues_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        issues_label.setStyleSheet("""
+            font-size: 24px;
             font-weight: bold;
-            color: #777777;
-            margin: 10px 0;
         """)
-        self.critical_card.add_widget(critical_label)
-        self.critical_card.setProperty("status_label", critical_label)
-        status_layout.addWidget(self.critical_card, 0, 1)
+        self.issues_card.set_content(issues_label)
+        self.issues_card.set_status("success")
+        status_layout.addWidget(self.issues_card, 0, 1)
         
         # Warnings card
         self.warnings_card = CardWidget(title="Warnings")
         warnings_label = QLabel("0")
         warnings_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         warnings_label.setStyleSheet("""
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
-            color: #777777;
-            margin: 10px 0;
         """)
-        self.warnings_card.add_widget(warnings_label)
-        self.warnings_card.setProperty("status_label", warnings_label)
+        self.warnings_card.set_content(warnings_label)
+        self.warnings_card.set_status("success")
         status_layout.addWidget(self.warnings_card, 0, 2)
         
         return status_layout
@@ -495,36 +454,33 @@ class ValidationDashboardView(QWidget):
         
         return recommendations
         
-    def _run_validation(self, show_popup=True):
-        """
-        Run validation checks and update the dashboard.
-        
-        Args:
-            show_popup: Whether to show a popup with validation results
-        """
-        # Get data from DataView if not already stored
-        if not self.data_paths and self.main_window and hasattr(self.main_window, 'data_view'):
+    def _run_validation(self):
+        """Run validation checks on the data."""
+        # Get data files from the data view
+        if self.main_window and hasattr(self.main_window, 'data_view'):
             self.data_paths = self.main_window.data_view.get_data_paths()
         
-        # Check if all required data files are set
+        # Check that all data files are available
         missing_files = [key for key, path in self.data_paths.items() 
-                       if not path or not path.strip()]
+                        if not path or not os.path.exists(path)]
         
         if missing_files:
-            missing_str = ", ".join(missing_files)
-            if show_popup:
-                QMessageBox.warning(
-                    self, 
-                    "Missing Files", 
-                    f"The following required data files are missing: {missing_str}\n"
-                    f"Please configure them in the Data tab."
-                )
+            missing_list = "\n".join([f"- {key}" for key in missing_files])
+            QMessageBox.warning(
+                self,
+                "Missing Data Files",
+                f"The following data files are missing or invalid:\n{missing_list}\n\n"
+                f"Please configure data files in the Data view."
+            )
             return
         
         try:
-            # Process data
-            data_processor = DataProcessor()
-            data_processor.load_data(
+            # Process the data
+            print("Loading data for validation...")
+            processor = DataProcessor(debug_mode=False)
+            
+            # Load data using the proper method
+            processor.load_data(
                 demand_file=self.data_paths.get("demand", ""),
                 supply_file=self.data_paths.get("supply", ""),
                 cost_file=self.data_paths.get("cost", ""),
@@ -533,63 +489,75 @@ class ValidationDashboardView(QWidget):
             )
             
             # Get optimization data
-            self.optimization_data = data_processor.get_optimization_data()
+            self.optimization_data = processor.get_optimization_data()
             
             # Run validation
+            print("Running validation...")
+            
+            # Use the correct validation methods
             is_feasible, critical_issues, warnings = self.data_validator.check_basic_feasibility(self.optimization_data)
             weekly_feasible, weekly_issues = self.data_validator.check_weekly_feasibility(self.optimization_data)
             
+            # Store results on the validator for access by other methods
+            self.data_validator.is_feasible = is_feasible
+            self.data_validator.critical_issues = critical_issues
+            self.data_validator.warnings = warnings
+            self.data_validator.weekly_issues = []
+            
+            # Parse weekly issues into a list of (week_idx, waffle_idx, severity) tuples
+            for issue in weekly_issues:
+                if "Week " in issue and "exceeds maximum theoretical capacity" in issue:
+                    parts = issue.split(":")
+                    if len(parts) >= 2:
+                        week_str = parts[0].strip().replace("Week ", "")
+                        waffle_str = parts[1].strip().split("'")[1]
+                        
+                        try:
+                            week_idx = self.optimization_data['weeks'].index(week_str)
+                            waffle_idx = self.optimization_data['waffle_types'].index(waffle_str)
+                            
+                            # 0 = critical issue (infeasible), 1 = warning (tight)
+                            severity = 0  # Assume critical for now
+                            
+                            self.data_validator.weekly_issues.append((week_idx, waffle_idx, severity))
+                        except (ValueError, IndexError):
+                            print(f"Could not parse weekly issue: {issue}")
+            
             # Update status cards
-            if is_feasible:
-                self._update_status_card(self.feasibility_card, "+ FEASIBLE", "#2ecc71")  # Green
-            else:
-                self._update_status_card(self.feasibility_card, "X INFEASIBLE", "#e74c3c")  # Red
-                
-            self._update_status_card(self.critical_card, len(critical_issues), 
-                                    "#e74c3c" if critical_issues else "#2ecc71")
-            self._update_status_card(self.warnings_card, len(warnings), 
-                                    "#f39c12" if warnings else "#2ecc71")
+            self._update_status_cards(self.data_validator)
             
-            # Create charts
-            self._create_supply_demand_chart(self.optimization_data)
-            self._create_weekly_feasibility_chart(self.optimization_data, weekly_issues)
-            self._create_combinations_matrix(self.optimization_data)
+            # Update charts based on validation results
+            self._update_supply_demand_chart()
+            self._update_weekly_feasibility_chart()
+            self._update_combinations_matrix()
             
-            # Generate and display recommendations
-            recommendations = self._generate_recommendations(
-                self.optimization_data, critical_issues, warnings, weekly_issues
-            )
+            # Switch to the first tab to show results
+            self.validation_tabs.setCurrentIndex(0)
             
-            # Update recommendations label
-            self.recommendations_label.setText("\n".join(recommendations))
+            # Update recommendations
+            self._update_recommendations()
             
             # Mark as validated
             self.is_validated = True
             
-            # Show message with validation results only if requested
-            if show_popup:
-                status = "passed" if is_feasible else "failed"
-                message = f"Validation {status}.\n\n"
-                
-                if critical_issues:
-                    message += "Critical Issues:\n"
-                    for issue in critical_issues:
-                        message += f"• {issue}\n"
-                    message += "\n"
-                    
-                if warnings:
-                    message += "Warnings:\n"
-                    for warning in warnings:
-                        message += f"• {warning}\n"
-                
-                if not critical_issues and not warnings:
-                    message += "No issues or warnings found."
-                    
-                QMessageBox.information(self, "Validation Results", message)
+            print("Validation completed successfully")
+            
+            # Show success message
+            QMessageBox.information(
+                self,
+                "Validation Complete",
+                "Data validation completed successfully.\n"
+                "You can view the results in the different tabs."
+            )
             
         except Exception as e:
-            if show_popup:
-                QMessageBox.critical(self, "Validation Error", f"An error occurred during validation: {str(e)}")
+            QMessageBox.critical(
+                self,
+                "Validation Error",
+                f"An error occurred during validation:\n{str(e)}"
+            )
+            import traceback
+            traceback.print_exc()
 
     def _refresh_data(self):
         """Refresh data from the data view without running validation."""
@@ -623,7 +591,7 @@ class ValidationDashboardView(QWidget):
         
         # Reset status cards to default state
         self._update_status_card(self.feasibility_card, "Not Validated", "#777777")
-        self._update_status_card(self.critical_card, "0", "#777777")
+        self._update_status_card(self.issues_card, "0", "#777777")
         self._update_status_card(self.warnings_card, "0", "#777777")
         
         # Clear charts
@@ -647,3 +615,259 @@ class ValidationDashboardView(QWidget):
             "Data Refreshed",
             "Data has been refreshed from the Data tab. Click 'Run Validation' to analyze the data."
         ) 
+
+    def _update_status_cards(self, validator):
+        """Update status cards based on validation results."""
+        # Get validation results from the validator
+        is_feasible = validator.is_feasible
+        critical_issues = validator.critical_issues
+        warnings = validator.warnings
+        
+        # Update status cards
+        if is_feasible:
+            self._update_status_card(self.feasibility_card, "+ FEASIBLE", "#2ecc71")  # Green
+        else:
+            self._update_status_card(self.feasibility_card, "X INFEASIBLE", "#e74c3c")  # Red
+            
+        self._update_status_card(self.issues_card, len(critical_issues), 
+                                "#e74c3c" if critical_issues else "#2ecc71")
+        self._update_status_card(self.warnings_card, len(warnings), 
+                                "#f39c12" if warnings else "#2ecc71")
+    
+    def _update_supply_demand_chart(self):
+        """Update the supply vs demand chart with validation data."""
+        self.supply_demand_canvas.axes.clear()
+        
+        try:
+            data = self.optimization_data
+            waffle_types = data['waffle_types']
+            
+            # Calculate total demand per waffle type
+            total_demand = {}
+            for waffle in waffle_types:
+                total_demand[waffle] = 0
+                for week in data['weeks']:
+                    total_demand[waffle] += data['demand'].get((waffle, week), 0)
+            
+            # Calculate maximum production capacity per waffle type
+            max_production = {}
+            for waffle in waffle_types:
+                max_production[waffle] = 0
+                wpp = data['wpp'].get(waffle, 0)
+                for pan in data['pan_types']:
+                    if data['allowed'].get((waffle, pan), False):
+                        for week in data['weeks']:
+                            max_production[waffle] += data['supply'].get((pan, week), 0) * wpp
+            
+            # Extract values in the same order as waffle_types
+            demand_values = [total_demand.get(w, 0) for w in waffle_types]
+            production_values = [max_production.get(w, 0) for w in waffle_types]
+            
+            # Get x position for bars
+            x = range(len(waffle_types))
+            width = 0.35
+            
+            # Plot bars
+            self.supply_demand_canvas.axes.bar(
+                [p - width/2 for p in x], 
+                production_values, 
+                width, 
+                label='Max Production Capacity', 
+                color='#3498db'
+            )
+            self.supply_demand_canvas.axes.bar(
+                [p + width/2 for p in x], 
+                demand_values, 
+                width, 
+                label='Total Demand', 
+                color='#e74c3c'
+            )
+            
+            # Add labels and legend
+            self.supply_demand_canvas.axes.set_xlabel('Waffle Types')
+            self.supply_demand_canvas.axes.set_ylabel('Quantity')
+            self.supply_demand_canvas.axes.set_title('Supply vs Demand Analysis')
+            self.supply_demand_canvas.axes.set_xticks(x)
+            self.supply_demand_canvas.axes.set_xticklabels(waffle_types, rotation=45, ha='right')
+            self.supply_demand_canvas.axes.legend()
+            
+            # Add grid and adjust layout
+            self.supply_demand_canvas.axes.grid(True, axis='y', linestyle='--', alpha=0.7)
+            self.supply_demand_canvas.fig.tight_layout()
+            self.supply_demand_canvas.draw()
+            
+        except Exception as e:
+            print(f"Error updating supply demand chart: {e}")
+            # Clear the chart and display error message
+            self.supply_demand_canvas.axes.clear()
+            self.supply_demand_canvas.axes.text(
+                0.5, 0.5, f"Error creating chart: {str(e)}", 
+                horizontalalignment='center', verticalalignment='center',
+                transform=self.supply_demand_canvas.axes.transAxes, color='red'
+            )
+            self.supply_demand_canvas.draw()
+    
+    def _update_weekly_feasibility_chart(self):
+        """Update the weekly feasibility chart with validation data."""
+        self.weekly_canvas.axes.clear()
+        
+        try:
+            data = self.optimization_data
+            weeks = data['weeks']
+            waffles = data['waffle_types']
+            weekly_issues = self.data_validator.weekly_issues
+            
+            # Create a matrix of feasibility values
+            # 0 = infeasible (red), 1 = tight capacity (yellow), 2 = feasible (green)
+            feasibility_matrix = np.ones((len(weeks), len(waffles))) * 2  # Initialize as feasible
+            
+            # Mark issues in the matrix
+            for week_idx, waffle_idx, severity in weekly_issues:
+                # severity: 0 = critical (infeasible), 1 = warning (tight)
+                feasibility_matrix[week_idx, waffle_idx] = severity
+            
+            # Create heatmap
+            cmap = plt.cm.get_cmap('RdYlGn', 3)  # Red, Yellow, Green
+            im = self.weekly_canvas.axes.imshow(
+                feasibility_matrix, cmap=cmap, aspect='auto', vmin=0, vmax=2
+            )
+            
+            # Add labels
+            self.weekly_canvas.axes.set_xticks(range(len(waffles)))
+            self.weekly_canvas.axes.set_yticks(range(len(weeks)))
+            self.weekly_canvas.axes.set_xticklabels(waffles, rotation=45, ha='right')
+            self.weekly_canvas.axes.set_yticklabels(weeks)
+            self.weekly_canvas.axes.set_xlabel('Waffle Types')
+            self.weekly_canvas.axes.set_ylabel('Weeks')
+            self.weekly_canvas.axes.set_title('Weekly Feasibility Analysis')
+            
+            # Add colorbar
+            cbar = self.weekly_canvas.fig.colorbar(im, ticks=[0, 1, 2])
+            cbar.ax.set_yticklabels(['Infeasible', 'Tight Capacity', 'Feasible'])
+            
+            # Adjust layout
+            self.weekly_canvas.fig.tight_layout()
+            self.weekly_canvas.draw()
+            
+        except Exception as e:
+            print(f"Error updating weekly feasibility chart: {e}")
+            # Clear the chart and display error message
+            self.weekly_canvas.axes.clear()
+            self.weekly_canvas.axes.text(
+                0.5, 0.5, f"Error creating chart: {str(e)}", 
+                horizontalalignment='center', verticalalignment='center',
+                transform=self.weekly_canvas.axes.transAxes, color='red'
+            )
+            self.weekly_canvas.draw()
+    
+    def _update_combinations_matrix(self):
+        """Update the combinations matrix chart with validation data."""
+        self.combinations_canvas.axes.clear()
+        
+        try:
+            data = self.optimization_data
+            waffles = data['waffle_types']
+            pans = data['pan_types']
+            allowed = data['allowed']
+            
+            # Create binary matrix for combinations (1 = allowed, 0 = not allowed)
+            combinations_matrix = np.zeros((len(waffles), len(pans)))
+            
+            # Fill in allowed combinations
+            for waffle_idx, waffle in enumerate(waffles):
+                for pan_idx, pan in enumerate(pans):
+                    if allowed.get((waffle, pan), False):
+                        combinations_matrix[waffle_idx, pan_idx] = 1
+            
+            # Create heatmap
+            cmap = plt.cm.Blues
+            im = self.combinations_canvas.axes.imshow(
+                combinations_matrix, cmap=cmap, aspect='auto', vmin=0, vmax=1
+            )
+            
+            # Add labels
+            self.combinations_canvas.axes.set_xticks(range(len(pans)))
+            self.combinations_canvas.axes.set_yticks(range(len(waffles)))
+            self.combinations_canvas.axes.set_xticklabels(pans, rotation=45, ha='right')
+            self.combinations_canvas.axes.set_yticklabels(waffles)
+            self.combinations_canvas.axes.set_xlabel('Pan Types')
+            self.combinations_canvas.axes.set_ylabel('Waffle Types')
+            self.combinations_canvas.axes.set_title('Allowed Waffle-Pan Combinations')
+            
+            # Add cell text (1 for allowed, empty for not allowed)
+            for i in range(len(waffles)):
+                for j in range(len(pans)):
+                    if combinations_matrix[i, j] > 0:
+                        self.combinations_canvas.axes.text(
+                            j, i, '✓', ha='center', va='center', color='white'
+                        )
+            
+            # Adjust layout
+            self.combinations_canvas.fig.tight_layout()
+            self.combinations_canvas.draw()
+            
+        except Exception as e:
+            print(f"Error updating combinations matrix: {e}")
+            # Clear the chart and display error message
+            self.combinations_canvas.axes.clear()
+            self.combinations_canvas.axes.text(
+                0.5, 0.5, f"Error creating chart: {str(e)}", 
+                horizontalalignment='center', verticalalignment='center',
+                transform=self.combinations_canvas.axes.transAxes, color='red'
+            )
+            self.combinations_canvas.draw()
+    
+    def _update_recommendations(self):
+        """Update the recommendations based on validation results."""
+        try:
+            # Generate recommendations based on validation results
+            recommendations = []
+            
+            # Get validation results
+            is_feasible = self.data_validator.is_feasible
+            critical_issues = self.data_validator.critical_issues
+            warnings = self.data_validator.warnings
+            weekly_issues = self.data_validator.weekly_issues
+            
+            # Overall feasibility recommendation
+            if is_feasible:
+                recommendations.append("✅ The optimization problem is feasible and ready for optimization.")
+            else:
+                recommendations.append("❌ The optimization problem is currently infeasible. Review critical issues below.")
+            
+            # Add critical issues
+            if critical_issues:
+                recommendations.append("\nCritical Issues:")
+                for issue in critical_issues:
+                    recommendations.append(f"❌ {issue}")
+            
+            # Add warnings
+            if warnings:
+                recommendations.append("\nWarnings:")
+                for warning in warnings:
+                    recommendations.append(f"⚠️ {warning}")
+            
+            # Add weekly issues if any
+            if weekly_issues:
+                recommendations.append("\nWeekly Feasibility Issues:")
+                for week_idx, waffle_idx, severity in weekly_issues[:5]:  # Limit to first 5 issues
+                    week = self.optimization_data['weeks'][week_idx]
+                    waffle = self.optimization_data['waffles'][waffle_idx]
+                    issue_type = "insufficient capacity" if severity == 0 else "tight capacity"
+                    recommendations.append(f"{'❌' if severity == 0 else '⚠️'} Week {week}, {waffle}: {issue_type}")
+                
+                if len(weekly_issues) > 5:
+                    recommendations.append(f"... and {len(weekly_issues) - 5} more issues. See the Weekly Feasibility tab.")
+            
+            # Add suggestion for optimization if feasible
+            if is_feasible:
+                recommendations.append("\nSuggestion: Proceed to Optimization to solve the model.")
+            else:
+                recommendations.append("\nSuggestion: Address the issues above before proceeding to optimization.")
+            
+            # Update the recommendations label
+            self.recommendations_label.setText("\n".join(recommendations))
+            
+        except Exception as e:
+            print(f"Error updating recommendations: {e}")
+            self.recommendations_label.setText(f"Error generating recommendations: {str(e)}") 

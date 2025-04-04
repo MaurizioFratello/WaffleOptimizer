@@ -1,23 +1,33 @@
 """
 Optimization view for configuring and running optimizations.
 """
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+from PyQt6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, 
                           QPushButton, QFormLayout, QComboBox, 
                           QSlider, QCheckBox, QGroupBox, QSpinBox,
-                          QDoubleSpinBox, QMessageBox)
+                          QDoubleSpinBox, QMessageBox, QFileDialog)
 from PyQt6.QtCore import Qt, QSettings
+import os
 
+from ..base_view import BaseView
 from ..controllers.optimization_controller import OptimizationController
 from ..widgets.optimization_status import OptimizationStatus
 
-class OptimizationView(QWidget):
+class OptimizationView(BaseView):
     """
     View for configuring and running waffle production optimizations.
     """
     
     def __init__(self, main_window=None):
-        super().__init__()
-        self.main_window = main_window
+        super().__init__(
+            title="Optimization Configuration",
+            description="Configure the optimization settings and run the waffle production optimizer.",
+            main_window=main_window,
+            action_button_text="Run Optimization"
+        )
+        
+        # Connect action button
+        self.action_button.clicked.connect(self._run_optimization)
+        
         self.settings = QSettings("WaffleOptimizer", "WaffleOptimizerGUI")
         
         # Create optimization controller
@@ -29,30 +39,16 @@ class OptimizationView(QWidget):
         self.optimization_controller.optimization_error.connect(self._on_optimization_error)
         self.optimization_controller.optimization_completed.connect(self._on_optimization_completed)
         
-        # Create layout
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(20, 20, 20, 20)
-        self.layout.setSpacing(15)
+        # Initialize optimization components
+        self._init_optimization_components()
         
-        # Header
-        header = QLabel("Optimization Configuration")
-        header.setObjectName("viewHeader")
-        header.setStyleSheet("""
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        """)
-        self.layout.addWidget(header)
-        
-        # Description
-        description = QLabel(
-            "Configure the optimization settings and run the waffle production optimizer."
-        )
-        description.setWordWrap(True)
-        self.layout.addWidget(description)
-        
+        # Load saved settings
+        self._load_settings()
+    
+    def _init_optimization_components(self):
+        """Initialize optimization view specific components."""
         # Create settings group
-        settings_group = QGroupBox("Optimization Settings")
+        settings_group = self.create_group_box("Optimization Settings")
         form_layout = QFormLayout(settings_group)
         
         # Objective selector
@@ -99,51 +95,53 @@ class OptimizationView(QWidget):
         self.debug_mode.setChecked(False)
         form_layout.addRow("Debug:", self.debug_mode)
         
-        self.layout.addWidget(settings_group)
+        self.content_layout.addWidget(settings_group)
         
         # Output file setting
-        output_group = QGroupBox("Output Settings")
-        output_layout = QFormLayout(output_group)
+        output_group = self.create_group_box("Output Settings")
+        output_layout = QVBoxLayout(output_group)
         
-        # Output file path - we can use FileSelector later if needed
+        # Output file path
+        path_layout = QHBoxLayout()
+        path_layout.addWidget(QLabel("Output File:"))
+        
         self.output_path = QComboBox()
         self.output_path.setEditable(True)
         self.output_path.addItem("data/output/waffle_solution.xlsx")
         self.output_path.addItem("data/output/optimization_results.xlsx")
-        output_layout.addRow("Output File:", self.output_path)
+        path_layout.addWidget(self.output_path, 1)
         
-        self.layout.addWidget(output_group)
+        # Browse button
+        self.browse_button = QPushButton("Browse...")
+        self.browse_button.clicked.connect(self._browse_output_path)
+        path_layout.addWidget(self.browse_button)
+        
+        # Export format
+        format_layout = QHBoxLayout()
+        format_layout.addWidget(QLabel("Format:"))
+        
+        self.export_format = QComboBox()
+        self.export_format.addItem("Excel (.xlsx)", "xlsx")
+        self.export_format.addItem("CSV (.csv)", "csv")
+        format_layout.addWidget(self.export_format)
+        format_layout.addStretch()
+        
+        # Add to output layout
+        output_layout.addLayout(path_layout)
+        output_layout.addLayout(format_layout)
+        
+        self.content_layout.addWidget(output_group)
         
         # Optimization status
-        status_group = QGroupBox("Optimization Status")
+        status_group = self.create_group_box("Optimization Status")
         status_layout = QVBoxLayout(status_group)
         
         self.optimization_status = OptimizationStatus()
         self.optimization_status.cancelled.connect(self._cancel_optimization)
         
         status_layout.addWidget(self.optimization_status)
-        self.layout.addWidget(status_group)
+        self.content_layout.addWidget(status_group)
         
-        # Action buttons
-        button_layout = QHBoxLayout()
-        
-        self.run_button = QPushButton("Run Optimization")
-        self.run_button.clicked.connect(self._run_optimization)
-        
-        self.view_results_button = QPushButton("View Results")
-        self.view_results_button.clicked.connect(
-            lambda: self.main_window._switch_view("results"))
-        self.view_results_button.setEnabled(False)
-        
-        button_layout.addStretch()
-        button_layout.addWidget(self.run_button)
-        button_layout.addWidget(self.view_results_button)
-        
-        self.layout.addLayout(button_layout)
-        
-        # Load saved settings
-        self._load_settings()
-    
     def _load_settings(self):
         """Load saved settings from QSettings."""
         # Objective
@@ -191,6 +189,7 @@ class OptimizationView(QWidget):
         self.settings.setValue("optimization/limit_to_demand", self.limit_to_demand.isChecked())
         self.settings.setValue("optimization/debug_mode", self.debug_mode.isChecked())
         self.settings.setValue("optimization/output_path", self.output_path.currentText())
+        self.settings.setValue("optimization/export_format", self.export_format.currentIndex())
     
     def _run_optimization(self):
         """Run the optimization with the current settings."""
@@ -253,8 +252,7 @@ class OptimizationView(QWidget):
     
     def _on_optimization_started(self):
         """Handle optimization started signal."""
-        self.run_button.setEnabled(False)
-        self.view_results_button.setEnabled(False)
+        self.action_button.setEnabled(False)
         self.optimization_status.start_optimization(self.time_limit.value())
     
     def _on_optimization_progress(self, value, status_text, gap, iterations):
@@ -269,7 +267,7 @@ class OptimizationView(QWidget):
             "Optimization Error", 
             f"An error occurred during optimization:\n{error_msg}"
         )
-        self.run_button.setEnabled(True)
+        self.action_button.setEnabled(True)
     
     def _on_optimization_completed(self, results):
         """Handle optimization completed signal."""
@@ -287,8 +285,7 @@ class OptimizationView(QWidget):
         self.optimization_status.finish_optimization(True, message)
         
         # Enable buttons
-        self.run_button.setEnabled(True)
-        self.view_results_button.setEnabled(True)
+        self.action_button.setEnabled(True)
         
         # Show results message
         objective = self.objective_combo.currentText()
@@ -301,5 +298,28 @@ class OptimizationView(QWidget):
             f"Objective ({objective}): {value:.2f}\n"
             f"Status: {status}\n"
             f"Optimality Gap: {gap:.2%}\n\n"
-            f"Click 'View Results' to see the detailed results."
-        ) 
+            f"Click 'Run Optimization' to start a new optimization."
+        )
+    
+    def _browse_output_path(self):
+        """Browse for an output file path."""
+        current_path = self.output_path.currentText()
+        current_dir = os.path.dirname(current_path) if current_path else "data/output"
+        
+        # Get the selected file format
+        file_format = self.export_format.currentData()
+        file_filter = "Excel Files (*.xlsx)" if file_format == "xlsx" else "CSV Files (*.csv)"
+        
+        # Open file dialog
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Select Output File",
+            current_dir,
+            file_filter
+        )
+        
+        if file_path:
+            # Add to combobox if not already present
+            if self.output_path.findText(file_path) == -1:
+                self.output_path.addItem(file_path)
+            self.output_path.setCurrentText(file_path) 

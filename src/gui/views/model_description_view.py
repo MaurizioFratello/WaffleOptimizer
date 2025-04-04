@@ -3,45 +3,33 @@ Model description view for the Waffle Optimizer GUI.
 """
 import os
 import markdown
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QScrollArea, 
+from PyQt6.QtWidgets import (QVBoxLayout, QScrollArea, 
                           QLabel, QTextBrowser)
 from PyQt6.QtCore import Qt
 
-class ModelDescriptionView(QWidget):
+from ..base_view import BaseView
+
+class ModelDescriptionView(BaseView):
     """
     View for displaying the mathematical model description.
     Shows formatted content from the README.md file.
     """
     
     def __init__(self, main_window=None):
-        super().__init__()
-        self.main_window = main_window
+        super().__init__(
+            title="Mathematical Model Description",
+            description="This section describes the mathematical formulation of the waffle production "
+                       "optimization model used in this application.",
+            main_window=main_window
+        )
         
         print("Initializing ModelDescriptionView")
         
-        # Create layout
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(20, 20, 20, 20)
-        self.layout.setSpacing(15)
+        # Initialize model description components
+        self._init_model_description_components()
         
-        # Header
-        header = QLabel("Mathematical Model Description")
-        header.setObjectName("viewHeader")
-        header.setStyleSheet("""
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        """)
-        self.layout.addWidget(header)
-        
-        # Description
-        description = QLabel(
-            "This section describes the mathematical formulation of the waffle production "
-            "optimization model used in this application."
-        )
-        description.setWordWrap(True)
-        self.layout.addWidget(description)
-        
+    def _init_model_description_components(self):
+        """Initialize model description view specific components."""
         # Create text browser with improved configuration
         self.text_browser = QTextBrowser()
         self.text_browser.setOpenExternalLinks(True)
@@ -63,7 +51,7 @@ class ModelDescriptionView(QWidget):
         scroll_area.setWidget(self.text_browser)
         
         # Add scroll area to layout
-        self.layout.addWidget(scroll_area, 1)  # 1 = stretch factor to take available space
+        self.content_layout.addWidget(scroll_area, 1)  # 1 = stretch factor to take available space
         
         print("About to load README content")
         # Load content directly with hardcoded description for reliability
