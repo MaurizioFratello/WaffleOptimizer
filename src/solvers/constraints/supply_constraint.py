@@ -4,9 +4,12 @@ Supply Constraint Module for Waffle Production Optimization.
 This module implements the supply limitation constraint for the optimization model.
 """
 from typing import Dict, Any, List
+import logging
 
 from src.solvers.constraints.base import Constraint
 
+# Set up logging
+logger = logging.getLogger(__name__)
 
 class SupplyConstraint(Constraint):
     """
@@ -43,28 +46,41 @@ class SupplyConstraint(Constraint):
         if self.cumulative:
             # Cumulative supply constraints - allow unused pans to carry over
             for p in pan_types:
-                cumulative_supply = 0
+                # Track cumulative supply and usage for each week
                 for t in weeks:
-                    # Add the supply for this week to the cumulative total
-                    if (p, t) in supply:
-                        cumulative_supply += supply[(p, t)]
+                    # Calculate cumulative supply up to week t
+                    cumulative_supply = sum(supply.get((p, week), 0) for week in weeks if week <= t)
                     
-                    # Create a constraint: cumulative usage <= cumulative supply
+                    # Create constraint: cumulative usage up to week t <= cumulative supply up to week t
                     constraint = solver.Constraint(-solver.infinity(), cumulative_supply)
+                    
+                    # Sum up all usage variables up to week t
                     for w in data['waffle_types']:
-                        for earlier_t in [week for week in weeks if week <= t]:
-                            if (w, p, earlier_t) in variables:
-                                constraint.SetCoefficient(variables[(w, p, earlier_t)], 1)
+                        for week in weeks:
+                            if week <= t and (w, p, week) in variables:
+                                constraint.SetCoefficient(variables[(w, p, week)], 1)
+                    
+                    logger.debug(f"Added cumulative supply constraint for pan {p}, week {t}: limit = {cumulative_supply}")
         else:
             # Weekly supply constraints - no carry over
             for p in pan_types:
                 for t in weeks:
-                    if (p, t) in supply:
-                        # Create a constraint: usage <= supply for this week
-                        constraint = solver.Constraint(-solver.infinity(), supply[(p, t)])
-                        for w in data['waffle_types']:
-                            if (w, p, t) in variables:
-                                constraint.SetCoefficient(variables[(w, p, t)], 1)
+                    # We need to create a constraint for each week, even if supply is 0
+                    # Get the supply for this week (default to 0 if not specified)
+                    weekly_supply = supply.get((p, t), 0)
+                    
+                    # Create a constraint: usage <= supply for this week
+                    constraint = solver.Constraint(-solver.infinity(), weekly_supply)
+                    
+                    # Add all usage variables for this week
+                    added = False
+                    for w in data['waffle_types']:
+                        if (w, p, t) in variables:
+                            constraint.SetCoefficient(variables[(w, p, t)], 1)
+                            added = True
+                    
+                    if added:
+                        logger.debug(f"Added weekly supply constraint for pan {p}, week {t}: limit = {weekly_supply}")
     
     def apply_to_pulp(self, problem: Any, variables: Dict, data: Dict) -> None:
         """
@@ -84,32 +100,34 @@ class SupplyConstraint(Constraint):
         if self.cumulative:
             # Cumulative supply constraints - allow unused pans to carry over
             for p in pan_types:
-                cumulative_supply = 0
                 for t in weeks:
-                    # Add the supply for this week to the cumulative total
-                    if (p, t) in supply:
-                        cumulative_supply += supply[(p, t)]
+                    # Calculate cumulative supply up to week t
+                    cumulative_supply = sum(supply.get((p, week), 0) for week in weeks if week <= t)
                     
                     # Create variables for all waffle types and weeks up to current week
-                    usage_vars = [variables[(w, p, earlier_t)] 
+                    usage_vars = [variables[(w, p, week)] 
                                 for w in data['waffle_types'] 
-                                for earlier_t in weeks if earlier_t <= t
-                                if (w, p, earlier_t) in variables]
+                                for week in weeks if week <= t
+                                if (w, p, week) in variables]
                     
-                    # Create constraint: cumulative usage <= cumulative supply
+                    # Create constraint: cumulative usage up to week t <= cumulative supply up to week t
                     problem += pulp.lpSum(usage_vars) <= cumulative_supply, f"CumulativeSupply_{p}_{t}"
         else:
             # Weekly supply constraints - no carry over
             for p in pan_types:
                 for t in weeks:
-                    if (p, t) in supply:
-                        # Create variables for all waffle types in this week
-                        usage_vars = [variables[(w, p, t)] 
-                                    for w in data['waffle_types'] 
-                                    if (w, p, t) in variables]
-                        
+                    # We need to create a constraint for each week, even if supply is 0
+                    # Get the supply for this week (default to 0 if not specified)
+                    weekly_supply = supply.get((p, t), 0)
+                    
+                    # Create variables for all waffle types in this week
+                    usage_vars = [variables[(w, p, t)] 
+                                for w in data['waffle_types'] 
+                                if (w, p, t) in variables]
+                    
+                    if usage_vars:
                         # Create constraint: usage <= supply for this week
-                        problem += pulp.lpSum(usage_vars) <= supply[(p, t)], f"Supply_{p}_{t}"
+                        problem += pulp.lpSum(usage_vars) <= weekly_supply, f"Supply_{p}_{t}"
     
     def validate_data(self, data: Dict) -> bool:
         """
