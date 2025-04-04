@@ -5,4 +5,5 @@ pulp>=2.6.0
 matplotlib>=3.4.0
 ortools>=9.4.0
 PyQt6>=6.4.0
+PyQt6-WebEngine>=6.4.0
 markdown>=3.4.0 
