@@ -1,0 +1,37 @@
+feat(gui): Enhance GUI layout and functionality
+
+Major changes:
+- Reorganized validation dashboard layout
+  * Moved recommendations section below status cards
+  * Positioned "Run Validation" button in top-right corner
+  * Removed redundant "Refresh Data" and "Go to Optimization" buttons
+  * Fixed validation charts to use correct data structure
+
+- Improved optimization view
+  * Added export options directly in optimization pane
+  * Added file format selection (Excel/CSV)
+  * Added browse button for output path selection
+  * Integrated output settings with optimization workflow
+
+- Enhanced results view
+  * Updated objective value display to show appropriate units
+  * Improved clarity of export options tab
+  * Fixed unit display (EUR for cost, units for output)
+
+- General improvements
+  * Standardized styling across all views
+  * Removed non-functional settings button
+  * Added comprehensive style verification testing
+  * Improved error handling and validation messages
+
+Technical details:
+- Updated data structure references from 'waffles'/'pans' to 'waffle_types'/'pan_types'
+- Implemented BaseView class for consistent styling
+- Added style verification tool for UI testing
+- Enhanced error handling in validation process
+
+Testing:
+- Added style verification test suite
+- Verified all views maintain consistent styling
+- Tested data validation with various input scenarios
+- Confirmed proper functioning of export options 

@@ -1,7 +1,63 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+waffle_env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.pydevproject
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Distribution
+*.spec
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Project-specific
+*.xlsx
+*.csv
+*.log
+output/
+temp/
+data/
+!data/examples/
+results/
 
 # C extensions
 *.so
@@ -75,9 +131,6 @@ docs/_build/
 .pybuilder/
 target/
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
 # IPython
 profile_default/
 ipython_config.py
@@ -127,7 +180,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-waffle_env/
 
 # Spyder project settings
 .spyderproject
@@ -153,15 +205,8 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# PyCharm
-.idea/
-
 # VSCode
-.vscode/
 *.code-workspace
-
-# Mac OS
-.DS_Store
 
 # Excel temporary files
 ~$*.xlsx
