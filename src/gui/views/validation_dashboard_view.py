@@ -177,6 +177,7 @@ class ValidationDashboardView(BaseView):
         """)
         self.feasibility_card.set_content(feasibility_label)
         self.feasibility_card.set_status("neutral")
+        self.feasibility_card.setProperty("status_label", feasibility_label)
         status_layout.addWidget(self.feasibility_card, 0, 0)
         
         # Issues card
@@ -189,6 +190,7 @@ class ValidationDashboardView(BaseView):
         """)
         self.issues_card.set_content(issues_label)
         self.issues_card.set_status("success")
+        self.issues_card.setProperty("status_label", issues_label)
         status_layout.addWidget(self.issues_card, 0, 1)
         
         # Warnings card
@@ -201,6 +203,7 @@ class ValidationDashboardView(BaseView):
         """)
         self.warnings_card.set_content(warnings_label)
         self.warnings_card.set_status("success")
+        self.warnings_card.setProperty("status_label", warnings_label)
         status_layout.addWidget(self.warnings_card, 0, 2)
         
         return status_layout
@@ -560,61 +563,76 @@ class ValidationDashboardView(BaseView):
             traceback.print_exc()
 
     def _refresh_data(self):
-        """Refresh data from the data view without running validation."""
-        # Get data from DataView
-        if not self.main_window or not hasattr(self.main_window, 'data_view'):
-            QMessageBox.warning(
-                self, 
-                "Missing Data", 
-                "Please configure data files in the Data tab first."
-            )
-            return
+        """
+        Refresh data from the data model service.
+        Returns True if all required data is available, False otherwise.
+        """
+        try:
+            import logging
+            logger = logging.getLogger(__name__)
             
-        self.data_paths = self.main_window.data_view.get_data_paths()
-        
-        # Check if all required data files are set
-        missing_files = [key for key, path in self.data_paths.items() 
-                      if not path or not path.strip()]
-        
-        if missing_files:
-            missing_str = ", ".join(missing_files)
-            QMessageBox.warning(
-                self, 
-                "Missing Files", 
-                f"The following required data files are missing: {missing_str}\n"
-                f"Please configure them in the Data tab."
-            )
-            return
-        
-        # Clear validation status
-        self.is_validated = False
-        
-        # Reset status cards to default state
-        self._update_status_card(self.feasibility_card, "Not Validated", "#777777")
-        self._update_status_card(self.issues_card, "0", "#777777")
-        self._update_status_card(self.warnings_card, "0", "#777777")
-        
-        # Clear charts
-        if hasattr(self, 'supply_demand_canvas') and self.supply_demand_canvas:
-            self.supply_demand_canvas.axes.clear()
-            self.supply_demand_canvas.draw()
-            
-        if hasattr(self, 'weekly_canvas') and self.weekly_canvas:
-            self.weekly_canvas.axes.clear()
-            self.weekly_canvas.draw()
-            
-        if hasattr(self, 'combinations_canvas') and self.combinations_canvas:
-            self.combinations_canvas.axes.clear()
-            self.combinations_canvas.draw()
-        
-        # Reset recommendations
-        self.recommendations_label.setText("Run validation to see recommendations.")
-        
-        QMessageBox.information(
-            self,
-            "Data Refreshed",
-            "Data has been refreshed from the Data tab. Click 'Run Validation' to analyze the data."
-        ) 
+            # Get parameter registry from main window if available
+            if hasattr(self, 'main_window') and self.main_window:
+                if hasattr(self.main_window, 'param_registry'):
+                    param_registry = self.main_window.param_registry
+                    
+                    # Get the data parameter model
+                    data_model = param_registry.get_model('data')
+                    
+                    # Get paths for all data files
+                    demand_file = data_model.get_parameter('demand_file')
+                    supply_file = data_model.get_parameter('supply_file')
+                    cost_file = data_model.get_parameter('cost_file')
+                    wpp_file = data_model.get_parameter('wpp_file')
+                    combinations_file = data_model.get_parameter('combinations_file')
+                    
+                    # Check if any required file is missing
+                    missing_files = []
+                    if not demand_file:
+                        missing_files.append("Demand file")
+                    if not supply_file:
+                        missing_files.append("Supply file")
+                    if not cost_file:
+                        missing_files.append("Cost file")
+                    if not wpp_file:
+                        missing_files.append("Waffles per pan file")
+                    if not combinations_file:
+                        missing_files.append("Combinations file")
+                    
+                    if missing_files:
+                        logger.warning(f"Missing data files: {', '.join(missing_files)}")
+                        self.data_paths = {}
+                        return False
+                    
+                    # Store data file paths
+                    self.data_paths = {
+                        'demand': demand_file,
+                        'supply': supply_file,
+                        'cost': cost_file,
+                        'wpp': wpp_file,
+                        'combinations': combinations_file
+                    }
+                    
+                    # Try to get other required data
+                    self.waffle_types = data_model.get_parameter('waffle_types')
+                    self.pan_types = data_model.get_parameter('pan_types')
+                    self.weeks = data_model.get_parameter('weeks')
+                    
+                    # Check if essential data is missing
+                    if not self.waffle_types or not self.pan_types or not self.weeks:
+                        logger.warning("Missing essential data (waffle types, pan types, or weeks)")
+                        return False
+                    
+                    return True
+                else:
+                    logger.warning("Parameter registry not available in main window")
+            else:
+                logger.warning("Main window not available or invalid")
+                
+            return False
+        except Exception as e:
+            logger.error(f"Error refreshing data: {e}")
+            return False
 
     def _update_status_cards(self, validator):
         """Update status cards based on validation results."""
@@ -870,4 +888,44 @@ class ValidationDashboardView(BaseView):
             
         except Exception as e:
             print(f"Error updating recommendations: {e}")
-            self.recommendations_label.setText(f"Error generating recommendations: {str(e)}") 
+            self.recommendations_label.setText(f"Error generating recommendations: {str(e)}")
+
+    def update_validation_status(self):
+        """
+        Update the validation status based on current data.
+        This method is called from the main window when data is loaded.
+        """
+        try:
+            # Check if data is available by trying to refresh data
+            data_available = self._refresh_data()
+            if data_available:
+                # If data is available, run validation
+                self._run_validation()
+            else:
+                # If data is not available, reset the validation status
+                self.feasibility_card.set_status("neutral")
+                feasibility_label = self.feasibility_card.property("status_label")
+                if feasibility_label:
+                    feasibility_label.setText("Not Validated")
+                
+                # Reset other cards
+                issues_label = self.issues_card.property("status_label")
+                warnings_label = self.warnings_card.property("status_label")
+                
+                if issues_label:
+                    issues_label.setText("0")
+                    self.issues_card.set_status("success")
+                    
+                if warnings_label:
+                    warnings_label.setText("0")
+                    self.warnings_card.set_status("success")
+                    
+                # Reset recommendations
+                self.recommendations_label.setText("Run validation to see recommendations.")
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in update_validation_status: {e}")
+            # Reset to a safe state
+            self.feasibility_card.set_status("neutral")
+            self.recommendations_label.setText("An error occurred during validation. Please try again.") 

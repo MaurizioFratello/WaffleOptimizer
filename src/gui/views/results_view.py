@@ -248,6 +248,16 @@ class ResultsView(BaseView):
                     self.export_path.removeItem(i)
                     break
     
+    def set_results(self, results):
+        """
+        Set the optimization results to display in the view.
+        This is called from the optimization view after optimization completes.
+        
+        Args:
+            results: Dictionary containing optimization results
+        """
+        self._on_optimization_completed(results)
+    
     def _browse_export_path(self):
         """Open a file dialog to select an export path."""
         file_format = self.export_format.currentData()

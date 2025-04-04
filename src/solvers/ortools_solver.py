@@ -5,8 +5,12 @@ This module provides the implementation of SolverInterface using Google OR-Tools
 """
 from typing import Dict, Any
 import time
+import logging
 from ortools.linear_solver import pywraplp
 from src.solvers.base import SolverInterface
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 class ORToolsSolver(SolverInterface):
     """
@@ -21,6 +25,7 @@ class ORToolsSolver(SolverInterface):
             time_limit: Time limit for solving the model in seconds
             optimality_gap: Maximum allowed optimality gap (default: 0.5%)
         """
+        super().__init__()  # Initialize constraint registry
         self.time_limit = time_limit
         self.optimality_gap = optimality_gap
         self.solver = None
@@ -30,6 +35,20 @@ class ORToolsSolver(SolverInterface):
         self.model_type = None
         self.solution_status = None
         self.start_time = None
+        logger.debug(f"Initialized OR-Tools solver with time_limit={time_limit}, optimality_gap={optimality_gap}")
+    
+    def apply_constraints(self) -> None:
+        """
+        Apply all registered constraints to the model.
+        """
+        if self.solver is None or self.data is None:
+            logger.error("Cannot apply constraints: model not built")
+            raise ValueError("Model has not been built. Call build_minimize_cost_model or build_maximize_output_model first.")
+        
+        logger.info("Applying constraints to OR-Tools model")
+        # Apply constraints using the constraint registry
+        self.constraint_registry.apply_constraints('ortools', self.solver, self.variables, self.data)
+        logger.debug("Constraints applied successfully")
     
     def build_minimize_cost_model(self, data: Dict) -> None:
         """
@@ -38,6 +57,7 @@ class ORToolsSolver(SolverInterface):
         Args:
             data: Dictionary containing optimization data
         """
+        logger.info("Building cost minimization model")
         self.data = data
         self.model_type = 'minimize_cost'
         
@@ -45,65 +65,50 @@ class ORToolsSolver(SolverInterface):
         waffle_types = data['waffle_types']
         pan_types = data['pan_types']
         weeks = sorted(data['weeks'])  # Sort weeks to ensure chronological order
-        demand = data['demand']
-        supply = data['supply']
-        wpp = data['wpp']  # Waffles per waffle type
         allowed = data['allowed']
         cost = data['cost']
+        wpp = data['wpp']  # Waffles per waffle type
+        
+        logger.debug(f"Model dimensions: {len(waffle_types)} waffle types, {len(pan_types)} pan types, {len(weeks)} weeks")
         
         # Create solver (use CBC by default, but use SCIP if available)
         try:
             self.solver = pywraplp.Solver.CreateSolver('SCIP')
             if self.solver is None:
+                logger.debug("SCIP solver not available, falling back to CBC")
                 self.solver = pywraplp.Solver.CreateSolver('CBC')
-        except:
+        except Exception as e:
+            logger.warning(f"Error creating SCIP solver: {str(e)}, falling back to CBC")
             self.solver = pywraplp.Solver.CreateSolver('CBC')
         
-        # Time limit and optimality gap are now set in solve_model()
+        logger.debug(f"Using solver: {self.solver.SolverVersion()}")
         
         # Create decision variables: x[waffle_type, pan_type, week]
-        # Represents the number of pans of type pan_type used to cook waffle_type in week
+        logger.debug("Creating decision variables")
         self.variables = {}
+        var_count = 0
         for w in waffle_types:
             for p in pan_types:
                 for t in weeks:
                     if allowed.get((w, p), False):
                         var_name = f'x_{w}_{p}_{t}'
                         self.variables[(w, p, t)] = self.solver.IntVar(0, self.solver.infinity(), var_name)
+                        var_count += 1
+        logger.debug(f"Created {var_count} decision variables")
         
         # Objective function: minimize total cost
-        # Cost is calculated as: (number of pans) * (waffles per pan) * (cost per waffle)
+        logger.debug("Setting up objective function")
         objective_expr = self.solver.Objective()
         for (w, p, t), var in self.variables.items():
-            objective_expr.SetCoefficient(var, cost.get((w, p), 0) * wpp.get(w, 0))
+            coeff = cost.get((w, p), 0) * wpp.get(w, 0)
+            objective_expr.SetCoefficient(var, coeff)
         objective_expr.SetMinimization()
         self.objective = objective_expr
+        logger.debug("Objective function set up complete")
         
-        # Constraint 1: Demand satisfaction for each waffle type in each week
-        # Using equality constraint (==) to use exactly the demanded number of pans
-        for w in waffle_types:
-            for t in weeks:
-                if (w, t) in demand:
-                    constraint = self.solver.Constraint(demand[(w, t)], demand[(w, t)])
-                    for p in pan_types:
-                        if (w, p, t) in self.variables:
-                            constraint.SetCoefficient(self.variables[(w, p, t)], 1)
-        
-        # Constraint 2: Running pan supply - implement cumulative constraints
-        # This allows unused pans from earlier weeks to be used in later weeks
-        for p in pan_types:
-            cumulative_supply = 0
-            for t in weeks:
-                # Add the supply for this week to the cumulative total
-                if (p, t) in supply:
-                    cumulative_supply += supply[(p, t)]
-                
-                # Create a constraint: cumulative usage <= cumulative supply
-                constraint = self.solver.Constraint(-self.solver.infinity(), cumulative_supply)
-                for w in waffle_types:
-                    for earlier_t in [week for week in weeks if week <= t]:
-                        if (w, p, earlier_t) in self.variables:
-                            constraint.SetCoefficient(self.variables[(w, p, earlier_t)], 1)
+        # Apply constraints from constraint registry
+        self.apply_constraints()
+        logger.info("Cost minimization model built successfully")
     
     def build_maximize_output_model(self, data: Dict, limit_to_demand: bool = False) -> None:
         """
@@ -114,6 +119,9 @@ class ORToolsSolver(SolverInterface):
             limit_to_demand: If True, production will be limited to exactly meet demand
                              If False (default), production can exceed demand
         """
+        logger.info("Building output maximization model")
+        logger.debug(f"Limit to demand: {limit_to_demand}")
+        
         self.data = data
         self.model_type = 'maximize_output'
         
@@ -121,66 +129,48 @@ class ORToolsSolver(SolverInterface):
         waffle_types = data['waffle_types']
         pan_types = data['pan_types']
         weeks = sorted(data['weeks'])  # Sort weeks to ensure chronological order
-        demand = data['demand']
-        supply = data['supply']
-        wpp = data['wpp']  # Waffles per waffle type
         allowed = data['allowed']
+        wpp = data['wpp']  # Waffles per waffle type
+        
+        logger.debug(f"Model dimensions: {len(waffle_types)} waffle types, {len(pan_types)} pan types, {len(weeks)} weeks")
         
         # Create solver (use CBC by default, but use SCIP if available)
         try:
             self.solver = pywraplp.Solver.CreateSolver('SCIP')
             if self.solver is None:
+                logger.debug("SCIP solver not available, falling back to CBC")
                 self.solver = pywraplp.Solver.CreateSolver('CBC')
-        except:
+        except Exception as e:
+            logger.warning(f"Error creating SCIP solver: {str(e)}, falling back to CBC")
             self.solver = pywraplp.Solver.CreateSolver('CBC')
         
-        # Time limit and optimality gap are now set in solve_model()
+        logger.debug(f"Using solver: {self.solver.SolverVersion()}")
         
         # Create decision variables: x[waffle_type, pan_type, week]
-        # Represents the number of pans of type pan_type used to cook waffle_type in week
+        logger.debug("Creating decision variables")
         self.variables = {}
+        var_count = 0
         for w in waffle_types:
             for p in pan_types:
                 for t in weeks:
                     if allowed.get((w, p), False):
                         var_name = f'x_{w}_{p}_{t}'
                         self.variables[(w, p, t)] = self.solver.IntVar(0, self.solver.infinity(), var_name)
+                        var_count += 1
+        logger.debug(f"Created {var_count} decision variables")
         
         # Objective function: maximize total waffle output
+        logger.debug("Setting up objective function")
         objective_expr = self.solver.Objective()
         for (w, p, t), var in self.variables.items():
             objective_expr.SetCoefficient(var, wpp.get(w, 0))
         objective_expr.SetMaximization()
         self.objective = objective_expr
+        logger.debug("Objective function set up complete")
         
-        # Constraint 1: Demand satisfaction for each waffle type in each week
-        # For maximizing output, we always use equality constraints to ensure we use exactly
-        # the number of pans demanded (not more or less)
-        for w in waffle_types:
-            for t in weeks:
-                if (w, t) in demand:
-                    # Equality constraint (exactly meet demand)
-                    constraint = self.solver.Constraint(demand[(w, t)], demand[(w, t)])
-                        
-                    for p in pan_types:
-                        if (w, p, t) in self.variables:
-                            constraint.SetCoefficient(self.variables[(w, p, t)], 1)
-        
-        # Constraint 2: Running pan supply - implement cumulative constraints
-        # This allows unused pans from earlier weeks to be used in later weeks
-        for p in pan_types:
-            cumulative_supply = 0
-            for t in weeks:
-                # Add the supply for this week to the cumulative total
-                if (p, t) in supply:
-                    cumulative_supply += supply[(p, t)]
-                
-                # Create a constraint: cumulative usage <= cumulative supply
-                constraint = self.solver.Constraint(-self.solver.infinity(), cumulative_supply)
-                for w in waffle_types:
-                    for earlier_t in [week for week in weeks if week <= t]:
-                        if (w, p, earlier_t) in self.variables:
-                            constraint.SetCoefficient(self.variables[(w, p, earlier_t)], 1)
+        # Apply constraints from constraint registry
+        self.apply_constraints()
+        logger.info("Output maximization model built successfully")
     
     def solve_model(self) -> Dict:
         """
@@ -190,81 +180,53 @@ class ORToolsSolver(SolverInterface):
             Dict: Dictionary containing solution information
         """
         if self.solver is None:
+            logger.error("Cannot solve model: model not built")
             raise ValueError("Model has not been built. Call build_minimize_cost_model or build_maximize_output_model first.")
+        
+        logger.info(f"Solving {self.model_type} model")
+        logger.debug(f"Time limit: {self.time_limit}s, Optimality gap: {self.optimality_gap}")
             
         # Set time limit (in milliseconds)
         self.solver.SetTimeLimit(self.time_limit * 1000)
         
         # Set optimality gap for SCIP solver
         if self.solver.SolverVersion() == "SCIP":
+            logger.debug(f"Setting SCIP optimality gap to {self.optimality_gap}")
             self.solver.SetSolverSpecificParametersAsString(f"limits/gap = {self.optimality_gap}")
-        elif self.solver.SolverVersion() == "CBC_MIXED_INTEGER_PROGRAMMING":
-            # For CBC, set relative gap tolerance
-            self.solver.SetSolverSpecificParametersAsString(f"ratioGap {self.optimality_gap}")
         
         # Record start time
         self.start_time = time.time()
         
         # Solve the model
+        logger.debug("Starting solver")
         status = self.solver.Solve()
+        solve_time = time.time() - self.start_time
         
-        # Calculate solution time
-        solution_time = time.time() - self.start_time
-        
-        # Get solution status
+        # Map the status to a human-readable string
         status_map = {
-            pywraplp.Solver.OPTIMAL: "Optimal",
-            pywraplp.Solver.FEASIBLE: "Feasible",
-            pywraplp.Solver.INFEASIBLE: "Infeasible",
-            pywraplp.Solver.UNBOUNDED: "Unbounded",
-            pywraplp.Solver.ABNORMAL: "Abnormal",
-            pywraplp.Solver.NOT_SOLVED: "NotSolved",
-            pywraplp.Solver.MODEL_INVALID: "ModelInvalid"
+            pywraplp.Solver.OPTIMAL: "OPTIMAL",
+            pywraplp.Solver.FEASIBLE: "FEASIBLE",
+            pywraplp.Solver.INFEASIBLE: "INFEASIBLE",
+            pywraplp.Solver.UNBOUNDED: "UNBOUNDED",
+            pywraplp.Solver.ABNORMAL: "ABNORMAL",
+            pywraplp.Solver.MODEL_INVALID: "MODEL_INVALID",
+            pywraplp.Solver.NOT_SOLVED: "NOT_SOLVED"
         }
+        self.solution_status = status_map.get(status, "UNKNOWN")
         
-        status_str = status_map.get(status, f"Unknown ({status})")
-        self.solution_status = status_str
+        # Log solution information
+        logger.info(f"Solver finished with status: {self.solution_status}")
+        logger.debug(f"Solve time: {solve_time:.2f}s")
+        if status in [pywraplp.Solver.OPTIMAL, pywraplp.Solver.FEASIBLE]:
+            logger.debug(f"Objective value: {self.objective.Value()}")
         
-        # Check if the solution is optimal or feasible
-        is_optimal = status == pywraplp.Solver.OPTIMAL
-        is_feasible = is_optimal or status == pywraplp.Solver.FEASIBLE
-        
-        # Get the objective value if the problem is feasible
-        objective_value = None
-        if is_feasible:
-            objective_value = self.solver.Objective().Value()
-        
-        # Get best bound and calculate optimality gap
-        best_bound = None
-        gap = 0.0  # Default to 0
-        
-        if is_feasible:
-            try:
-                best_bound = self.solver.Objective().BestBound()
-                if best_bound is not None and abs(objective_value) > 1e-10:
-                    if self.model_type == 'minimize_cost':
-                        # For minimization, bound is lower than objective
-                        gap = abs(objective_value - best_bound) / abs(objective_value)
-                    else:
-                        # For maximization, bound is higher than objective
-                        gap = abs(best_bound - objective_value) / abs(objective_value)
-            except:
-                # Some solvers might not support BestBound
-                pass
-        
-        # Prepare solution information
-        solution_info = {
-            'status': status_str,
-            'is_optimal': is_optimal,
-            'is_feasible': is_feasible,
-            'objective_value': objective_value,
-            'solution_time': solution_time,
-            'solver_name': 'OR-Tools',
-            'best_bound': best_bound,
-            'gap': gap
+        # Return solution information
+        return {
+            "status": self.solution_status,
+            "solve_time": solve_time,
+            "objective_value": self.objective.Value() if status in [pywraplp.Solver.OPTIMAL, pywraplp.Solver.FEASIBLE] else None,
+            "model_type": self.model_type
         }
-        
-        return solution_info
     
     def get_solution(self) -> Dict:
         """
@@ -273,56 +235,30 @@ class ORToolsSolver(SolverInterface):
         Returns:
             Dict: Dictionary containing the solution variables and objective value
         """
-        if self.solver is None or self.solution_status is None:
-            raise ValueError("Model has not been solved. Call solve_model first.")
-            
-        # Check if the solution is feasible
-        if self.solution_status not in ["Optimal", "Feasible"]:
-            raise ValueError(f"Cannot get solution: problem status is '{self.solution_status}'")
+        logger.debug("Retrieving solution")
         
-        # Extract solution variables and their values
-        solution_variables = {}
-        for var_key, var in self.variables.items():
-            value = var.solution_value()
-            # Only include non-zero values to keep the solution compact
-            if value is not None and abs(value) > 1e-6:
-                solution_variables[var_key] = int(round(value))  # Round to nearest integer
-        
-        # Get the objective value
-        objective_value = self.solver.Objective().Value()
-        
-        # Calculate solution metrics based on model type
-        if self.model_type == 'minimize_cost':
-            total_cost = objective_value
-            total_output = sum(
-                self.data['wpp'].get(w, 0) * count
-                for (w, p, t), count in solution_variables.items()
-            )
-            metrics = {
-                'total_cost': total_cost,
-                'total_output': total_output,
-                'average_cost_per_waffle': total_cost / total_output if total_output > 0 else float('inf')
-            }
-        else:  # maximize_output
-            total_output = objective_value
-            total_cost = sum(
-                self.data['cost'].get((w, p), 0) * self.data['wpp'].get(w, 0) * count
-                for (w, p, t), count in solution_variables.items()
-            )
-            metrics = {
-                'total_output': total_output,
-                'total_cost': total_cost,
-                'average_cost_per_waffle': total_cost / total_output if total_output > 0 else float('inf')
+        if self.solver is None or self.solution_status not in ["OPTIMAL", "FEASIBLE"]:
+            logger.warning(f"Cannot retrieve solution: status is {self.solution_status}")
+            return {
+                "status": self.solution_status if self.solution_status else "NOT_SOLVED",
+                "values": {},
+                "objective_value": None,
+                "model_type": self.model_type
             }
         
-        # Prepare full solution
-        solution = {
-            'variables': solution_variables,
-            'objective_value': objective_value,
-            'metrics': metrics,
-            'model_type': self.model_type,
-            'solution_time': time.time() - self.start_time,
-            'status': self.solution_status
-        }
+        # Extract solution values
+        logger.debug("Extracting non-zero variable values")
+        solution_values = {}
+        non_zero_count = 0
+        for key, var in self.variables.items():
+            if var.solution_value() > 0:
+                solution_values[key] = var.solution_value()
+                non_zero_count += 1
         
-        return solution 
+        logger.debug(f"Found {non_zero_count} non-zero variables")
+        return {
+            "status": self.solution_status,
+            "values": solution_values,
+            "objective_value": self.objective.Value(),
+            "model_type": self.model_type
+        } 

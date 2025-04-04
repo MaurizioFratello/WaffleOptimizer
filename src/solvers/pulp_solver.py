@@ -30,6 +30,7 @@ class PulpSolver(SolverInterface):
             optimality_gap: Maximum allowed optimality gap (default: 0.5%)
             solver_name: Name of the underlying solver (CBC, GLPK, HiGHS, etc.)
         """
+        super().__init__()  # Initialize constraint registry
         self.time_limit = time_limit
         self.optimality_gap = optimality_gap
         self.solver_name = solver_name
@@ -67,6 +68,16 @@ class PulpSolver(SolverInterface):
             # Default to CBC if unknown solver name
             return pulp.PULP_CBC_CMD(timeLimit=self.time_limit, gapRel=self.optimality_gap)
         
+    def apply_constraints(self) -> None:
+        """
+        Apply all registered constraints to the model.
+        """
+        if self.model is None or self.data is None:
+            raise ValueError("Model has not been built. Call build_minimize_cost_model or build_maximize_output_model first.")
+        
+        # Apply constraints using the constraint registry
+        self.constraint_registry.apply_constraints('pulp', self.model, self.variables, self.data)
+        
     def build_minimize_cost_model(self, data: Dict) -> None:
         """
         Build an optimization model to minimize production cost.
@@ -84,11 +95,9 @@ class PulpSolver(SolverInterface):
         waffle_types = data['waffle_types']
         pan_types = data['pan_types']
         weeks = sorted(data['weeks'])  # Sort weeks to ensure chronological order
-        demand = data['demand']
-        supply = data['supply']
-        wpp = data['wpp']  # Waffles per waffle type
         allowed = data['allowed']
         cost = data['cost']
+        wpp = data['wpp']  # Waffles per waffle type
         
         # Create decision variables: x[waffle_type, pan_type, week]
         # Represents the number of pans of type pan_type used to cook waffle_type in week
@@ -108,33 +117,8 @@ class PulpSolver(SolverInterface):
         )
         self.model += objective_expr
         
-        # Constraint 1: Demand satisfaction for each waffle type in each week
-        # Using equality constraint (==) to use exactly the demanded number of pans
-        for w in waffle_types:
-            for t in weeks:
-                if (w, t) in demand:
-                    constraint_expr = pulp.lpSum(
-                        self.variables.get((w, p, t), 0) for p in pan_types if (w, p, t) in self.variables
-                    )
-                    self.model += constraint_expr == demand[(w, t)], f"demand_{w}_{t}"
-        
-        # Constraint 2: Running pan supply - implement cumulative constraints
-        # This allows unused pans from earlier weeks to be used in later weeks
-        for p in pan_types:
-            cumulative_supply = 0
-            for t in weeks:
-                # Add the supply for this week to the cumulative total
-                if (p, t) in supply:
-                    cumulative_supply += supply[(p, t)]
-                
-                # Create a constraint: cumulative usage <= cumulative supply
-                constraint_expr = pulp.lpSum(
-                    self.variables.get((w, p, earlier_t), 0)
-                    for w in waffle_types
-                    for earlier_t in [week for week in weeks if week <= t]
-                    if (w, p, earlier_t) in self.variables
-                )
-                self.model += constraint_expr <= cumulative_supply, f"supply_{p}_{t}"
+        # Apply constraints from constraint registry
+        self.apply_constraints()
     
     def build_maximize_output_model(self, data: Dict, limit_to_demand: bool = False) -> None:
         """
@@ -155,10 +139,8 @@ class PulpSolver(SolverInterface):
         waffle_types = data['waffle_types']
         pan_types = data['pan_types']
         weeks = sorted(data['weeks'])  # Sort weeks to ensure chronological order
-        demand = data['demand']
-        supply = data['supply']
-        wpp = data['wpp']  # Waffles per waffle type
         allowed = data['allowed']
+        wpp = data['wpp']  # Waffles per waffle type
         
         # Create decision variables: x[waffle_type, pan_type, week]
         # Represents the number of pans of type pan_type used to cook waffle_type in week
@@ -177,35 +159,8 @@ class PulpSolver(SolverInterface):
         )
         self.model += objective_expr
         
-        # Constraint 1: Demand satisfaction for each waffle type in each week
-        # For maximizing output, we always use limit_to_demand=True to ensure we use exactly
-        # the number of pans demanded (not more or less)
-        for w in waffle_types:
-            for t in weeks:
-                if (w, t) in demand:
-                    constraint_expr = pulp.lpSum(
-                        self.variables.get((w, p, t), 0) for p in pan_types if (w, p, t) in self.variables
-                    )
-                    # Always use equality constraint to use exactly the demanded number of pans
-                    self.model += constraint_expr == demand[(w, t)], f"demand_{w}_{t}"
-        
-        # Constraint 2: Running pan supply - implement cumulative constraints
-        # This allows unused pans from earlier weeks to be used in later weeks
-        for p in pan_types:
-            cumulative_supply = 0
-            for t in weeks:
-                # Add the supply for this week to the cumulative total
-                if (p, t) in supply:
-                    cumulative_supply += supply[(p, t)]
-                
-                # Create a constraint: cumulative usage <= cumulative supply
-                constraint_expr = pulp.lpSum(
-                    self.variables.get((w, p, earlier_t), 0)
-                    for w in waffle_types
-                    for earlier_t in [week for week in weeks if week <= t]
-                    if (w, p, earlier_t) in self.variables
-                )
-                self.model += constraint_expr <= cumulative_supply, f"supply_{p}_{t}"
+        # Apply constraints from constraint registry
+        self.apply_constraints()
     
     def solve_model(self) -> Dict:
         """
@@ -216,43 +171,34 @@ class PulpSolver(SolverInterface):
         """
         if self.model is None:
             raise ValueError("Model has not been built. Call build_minimize_cost_model or build_maximize_output_model first.")
-            
-        # Create appropriate solver
+        
+        # Create solver instance
         solver = self._create_solver()
         
         # Record start time
         self.start_time = time.time()
         
         # Solve the model
-        self.model.solve(solver)
+        status = self.model.solve(solver)
         
-        # Calculate solution time
-        solution_time = time.time() - self.start_time
-        
-        # Get solution status
-        status = pulp.LpStatus[self.model.status]
-        self.solution_status = status
-        
-        # Check if the solution is optimal or feasible
-        is_optimal = status == "Optimal"
-        is_feasible = is_optimal or status == "Feasible"
-        
-        # Get the objective value if the problem is feasible
-        objective_value = None
-        if is_feasible:
-            objective_value = pulp.value(self.model.objective)
-        
-        # Prepare solution information
-        solution_info = {
-            'status': status,
-            'is_optimal': is_optimal,
-            'is_feasible': is_feasible,
-            'objective_value': objective_value,
-            'solution_time': solution_time,
-            'solver_name': f"PuLP_{self.solver_name}"
+        # Map PuLP status to a human-readable string
+        status_map = {
+            pulp.LpStatusOptimal: "OPTIMAL",
+            pulp.LpStatusNotSolved: "NOT_SOLVED",
+            pulp.LpStatusInfeasible: "INFEASIBLE",
+            pulp.LpStatusUnbounded: "UNBOUNDED",
+            pulp.LpStatusUndefined: "UNDEFINED"
         }
         
-        return solution_info
+        self.solution_status = status_map.get(status, "UNKNOWN")
+        
+        # Return solution information
+        return {
+            "status": self.solution_status,
+            "solve_time": time.time() - self.start_time,
+            "objective_value": pulp.value(self.model.objective) if self.solution_status == "OPTIMAL" else None,
+            "model_type": self.model_type
+        }
     
     def get_solution(self) -> Dict:
         """
@@ -261,56 +207,24 @@ class PulpSolver(SolverInterface):
         Returns:
             Dict: Dictionary containing the solution variables and objective value
         """
-        if self.model is None or self.solution_status is None:
-            raise ValueError("Model has not been solved. Call solve_model first.")
-            
-        # Check if the solution is feasible
-        if self.solution_status not in ["Optimal", "Feasible"]:
-            raise ValueError(f"Cannot get solution: problem status is '{self.solution_status}'")
-        
-        # Extract solution variables and their values
-        solution_variables = {}
-        for var_key, var in self.variables.items():
-            value = pulp.value(var)
-            # Only include non-zero values to keep the solution compact
-            if value is not None and abs(value) > 1e-6:
-                solution_variables[var_key] = int(round(value))  # Round to nearest integer
-        
-        # Get the objective value
-        objective_value = pulp.value(self.model.objective)
-        
-        # Calculate solution metrics based on model type
-        if self.model_type == 'minimize_cost':
-            total_cost = objective_value
-            total_output = sum(
-                self.data['wpp'].get(w, 0) * count
-                for (w, p, t), count in solution_variables.items()
-            )
-            metrics = {
-                'total_cost': total_cost,
-                'total_output': total_output,
-                'average_cost_per_waffle': total_cost / total_output if total_output > 0 else float('inf')
-            }
-        else:  # maximize_output
-            total_output = objective_value
-            total_cost = sum(
-                self.data['cost'].get((w, p), 0) * self.data['wpp'].get(w, 0) * count
-                for (w, p, t), count in solution_variables.items()
-            )
-            metrics = {
-                'total_output': total_output,
-                'total_cost': total_cost,
-                'average_cost_per_waffle': total_cost / total_output if total_output > 0 else float('inf')
+        if self.model is None or self.solution_status != "OPTIMAL":
+            return {
+                "status": self.solution_status if self.solution_status else "NOT_SOLVED",
+                "values": {},
+                "objective_value": None,
+                "model_type": self.model_type
             }
         
-        # Prepare full solution
-        solution = {
-            'variables': solution_variables,
-            'objective_value': objective_value,
-            'metrics': metrics,
-            'model_type': self.model_type,
-            'solution_time': time.time() - self.start_time,
-            'status': self.solution_status
-        }
+        # Extract solution values
+        solution_values = {}
+        for key, var in self.variables.items():
+            if pulp.value(var) > 0:
+                solution_values[key] = pulp.value(var)
         
-        return solution 
+        return {
+            "status": self.solution_status,
+            "values": solution_values,
+            "objective_value": pulp.value(self.model.objective),
+            "model_type": self.model_type,
+            "solve_time": time.time() - self.start_time if self.start_time else None
+        } 

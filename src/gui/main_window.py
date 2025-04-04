@@ -1,9 +1,10 @@
 """
 Main window implementation for the Waffle Optimizer GUI.
 """
+import logging
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, 
                            QHBoxLayout, QLabel, QPushButton, 
-                           QStackedWidget, QFrame)
+                           QStackedWidget, QFrame, QMessageBox)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 import os
@@ -15,12 +16,28 @@ from .views.optimization_view import OptimizationView
 from .views.results_view import ResultsView
 from .views.model_description_view import ModelDescriptionView
 from .styles import AppStyles
+from src.models.parameter_registry import ParameterRegistry
+from src.models.data_model_service import DataModelService
+
+logger = logging.getLogger(__name__)
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Waffle Production Optimizer")
         self.setMinimumSize(1024, 768)
+        
+        # Initialize parameter registry
+        self.param_registry = ParameterRegistry.get_instance()
+        logger.debug("Parameter registry initialized")
+        
+        # Create data model service
+        self.data_model_service = DataModelService()
+        
+        # Connect data service signals
+        self.data_model_service.data_loaded.connect(self._on_data_loaded)
+        self.data_model_service.data_error.connect(self._on_data_error)
+        logger.debug("Data model service initialized")
         
         # Create central widget and main layout
         self.central_widget = QWidget()
@@ -42,6 +59,31 @@ class MainWindow(QMainWindow):
         
         # Set window style
         self._apply_stylesheet()
+        
+        logger.debug("Main window initialized")
+    
+    def _on_data_loaded(self):
+        """Handle data loading completion."""
+        logger.debug("Data loaded successfully")
+        
+        # Update views that depend on data
+        if hasattr(self, 'validation_view'):
+            logger.debug("Updating validation view")
+            self.validation_view.update_validation_status()
+        
+        if hasattr(self, 'optimization_view'):
+            logger.debug("Updating optimization view constraints")
+            self.optimization_view.update_constraint_options()
+    
+    def _on_data_error(self, error_msg):
+        """Handle data loading errors."""
+        logger.error(f"Data loading error: {error_msg}")
+        
+        QMessageBox.critical(
+            self,
+            "Data Loading Error",
+            f"Error loading data: {error_msg}"
+        )
     
     def _create_sidebar(self):
         """Create the sidebar navigation widget."""
@@ -99,6 +141,8 @@ class MainWindow(QMainWindow):
     
     def _init_views(self):
         """Initialize the main content views."""
+        logger.debug("Initializing views")
+        
         # Create views - passing self allows views to access main window methods
         self.dashboard_view = DashboardView(self)
         self.data_view = DataView(self)
@@ -115,8 +159,20 @@ class MainWindow(QMainWindow):
         self.content_stack.addWidget(self.results_view)
         self.content_stack.addWidget(self.model_description_view)
         
+        # Connect data_view signals to data model service
+        if hasattr(self.data_view, 'data_loaded'):
+            self.data_view.data_loaded.connect(self._handle_data_view_loaded)
+        
         # Set initial view
         self._switch_view("data")
+    
+    def _handle_data_view_loaded(self):
+        """Handle data loaded signal from data view."""
+        logger.debug("Data files selected in data view")
+        
+        # This is a bridge function to maintain backward compatibility
+        # The data_view.data_loaded signal is now also listened to by the data model service
+        pass
     
     def _switch_view(self, view_name):
         """Switch to the specified view."""
@@ -130,19 +186,14 @@ class MainWindow(QMainWindow):
         }
         
         if view_name in view_map:
-            print(f"Switching to view: {view_name}")
+            logger.debug(f"Switching to view: {view_name}")
             self.content_stack.setCurrentIndex(view_map[view_name])
             
             # Special handling for model description view to ensure it's visible
             if view_name == "model_description":
-                print("Model description view selected")
+                logger.debug("Model description view selected")
                 # No need to reload, just ensure it's visible
                 self.model_description_view.setFocus()
-            
-            # Special handling for validation view - Only load the data, don't run validation
-            if view_name == "validation" and hasattr(self, 'validation_view'):
-                # Just load current data paths for reference
-                self.validation_view.data_paths = self.data_view.get_data_paths()
             
             # Update button styles
             for i in range(self.sidebar.layout().count()):

@@ -5,7 +5,9 @@ This module handles loading and validating input data from Excel files.
 """
 import pandas as pd
 import numpy as np
-from typing import Dict, Tuple, List, Set, Optional
+from typing import Dict, Tuple, List, Set, Optional, Any
+
+from src.data.constraint_config import ConstraintConfigManager
 
 class DataProcessor:
     def __init__(self, debug_mode: bool = False):
@@ -37,6 +39,9 @@ class DataProcessor:
         self.wpp_dict = {}
         self.allowed_dict = {}
         
+        # Initialize constraint configuration manager
+        self.constraint_manager = ConstraintConfigManager(debug_mode=debug_mode)
+        
     def _debug_print(self, message: str) -> None:
         """
         Print debug message if debug mode is enabled.
@@ -45,14 +50,15 @@ class DataProcessor:
             message: Debug message to print
         """
         if self.debug_mode:
-            print(message)
+            print(f"[DataProcessor] {message}")
 
     def load_data(self, 
                   demand_file: str, 
                   supply_file: str, 
                   cost_file: str, 
                   wpp_file: str, 
-                  combinations_file: str) -> None:
+                  combinations_file: str,
+                  constraint_config_file: Optional[str] = None) -> None:
         """
         Load data from Excel files.
         
@@ -62,6 +68,7 @@ class DataProcessor:
             cost_file: Path to waffle cost Excel file
             wpp_file: Path to waffles per pan Excel file
             combinations_file: Path to allowed combinations Excel file
+            constraint_config_file: Path to constraint configuration JSON file (optional)
         """
         # Load raw data from Excel files
         self.waffle_demand = pd.read_excel(demand_file)
@@ -103,6 +110,11 @@ class DataProcessor:
         self._extract_dimensions()
         self._validate_data()
         self._process_data()
+        
+        # Load constraint configuration if provided
+        if constraint_config_file:
+            self._debug_print(f"Loading constraint configuration from {constraint_config_file}")
+            self.constraint_manager.load_configuration(constraint_config_file)
         
     def _extract_dimensions(self) -> None:
         """Extract dimensions (waffle types, pan types, weeks) from input data."""
@@ -199,6 +211,8 @@ class DataProcessor:
         for col in required_columns:
             if col not in self.allowed_combinations.columns:
                 raise ValueError(f"{col} column is missing in allowed combinations data.")
+                
+        # Additional validation could be added here
         
     def _process_data(self) -> None:
         """Process the loaded data into dictionaries for optimization."""
@@ -206,19 +220,19 @@ class DataProcessor:
         for _, row in self.waffle_demand.iterrows():
             waffle_type = row['WaffleType']
             for week in self.weeks:
-                if week in self.waffle_demand.columns:
-                    demand = row[week]
-                    if not pd.isna(demand) and demand > 0:
-                        self.demand_dict[(waffle_type, week)] = demand
+                if week in self.waffle_demand.columns and not pd.isna(row[week]):
+                    demand_value = int(row[week])
+                    if demand_value > 0:
+                        self.demand_dict[(waffle_type, week)] = demand_value
         
         # Process supply data
         for _, row in self.pan_supply.iterrows():
             pan_type = row['PanType']
             for week in self.weeks:
-                if week in self.pan_supply.columns:
-                    supply = row[week]
-                    if not pd.isna(supply) and supply > 0:
-                        self.supply_dict[(pan_type, week)] = supply
+                if week in self.pan_supply.columns and not pd.isna(row[week]):
+                    supply_value = int(row[week])
+                    if supply_value > 0:
+                        self.supply_dict[(pan_type, week)] = supply_value
         
         # Process cost data
         for _, row in self.waffle_cost.iterrows():
@@ -226,26 +240,33 @@ class DataProcessor:
             pan_type = row['PanType']
             cost = row['Cost']
             if not pd.isna(cost):
-                self.cost_dict[(waffle_type, pan_type)] = cost
+                self.cost_dict[(waffle_type, pan_type)] = float(cost)
         
         # Process waffles per pan data
         for _, row in self.waffles_per_pan.iterrows():
             waffle_type = row['WaffleType']
             wpp = row['WPP']
             if not pd.isna(wpp):
-                self.wpp_dict[waffle_type] = wpp
+                self.wpp_dict[waffle_type] = int(wpp)
         
         # Process allowed combinations data
         for _, row in self.allowed_combinations.iterrows():
             waffle_type = row['WaffleType']
             pan_type = row['PanType']
             allowed = row['Allowed']
-            if not pd.isna(allowed) and allowed:
-                self.allowed_dict[(waffle_type, pan_type)] = bool(allowed)
-                
+            if not pd.isna(allowed):
+                # Convert to boolean (various formats)
+                if isinstance(allowed, bool):
+                    self.allowed_dict[(waffle_type, pan_type)] = allowed
+                elif isinstance(allowed, (int, float)):
+                    self.allowed_dict[(waffle_type, pan_type)] = allowed > 0
+                elif isinstance(allowed, str):
+                    allowed_lower = allowed.lower()
+                    self.allowed_dict[(waffle_type, pan_type)] = allowed_lower in ['yes', 'true', '1', 't', 'y']
+        
     def check_data_loaded(self) -> bool:
         """
-        Check if data has been successfully loaded.
+        Check if data has been loaded.
         
         Returns:
             bool: True if data is loaded, False otherwise
@@ -255,18 +276,19 @@ class DataProcessor:
                 self.waffle_cost is not None and
                 self.waffles_per_pan is not None and
                 self.allowed_combinations is not None)
-        
+                
     def get_optimization_data(self) -> Dict:
         """
-        Get the processed data for optimization.
+        Get the data in a format suitable for optimization.
         
         Returns:
-            Dict: Dictionary containing processed optimization data
+            Dict: Dictionary containing optimization data
         """
         if not self.check_data_loaded():
             raise ValueError("Data has not been loaded. Call load_data first.")
             
-        return {
+        # Create the optimization data dictionary
+        optimization_data = {
             'waffle_types': self.waffle_types,
             'pan_types': self.pan_types,
             'weeks': self.weeks,
@@ -277,56 +299,60 @@ class DataProcessor:
             'allowed': self.allowed_dict
         }
         
+        return optimization_data
+        
     def get_feasibility_data(self) -> Dict:
         """
-        Get data for feasibility analysis.
+        Get the data in a format suitable for feasibility checking.
         
         Returns:
-            Dict: Dictionary containing data for feasibility checks
+            Dict: Dictionary containing feasibility data
         """
-        if not self.check_data_loaded():
-            raise ValueError("Data has not been loaded. Call load_data first.")
+        # For now, the same as optimization data
+        return self.get_optimization_data()
+    
+    def get_constraint_manager(self) -> ConstraintConfigManager:
+        """
+        Get the constraint configuration manager.
+        
+        Returns:
+            ConstraintConfigManager: Constraint configuration manager
+        """
+        return self.constraint_manager
+    
+    def save_constraint_configuration(self, file_path: str) -> bool:
+        """
+        Save the current constraint configuration to a file.
+        
+        Args:
+            file_path: Path to save the configuration
             
-        # Calculate total demand per waffle type across all weeks
-        total_demand = {}
-        for waffle_type in self.waffle_types:
-            total_demand[waffle_type] = sum(
-                self.demand_dict.get((waffle_type, week), 0)
-                for week in self.weeks
-            )
+        Returns:
+            bool: True if the configuration was saved successfully, False otherwise
+        """
+        return self.constraint_manager.save_configuration(file_path)
+    
+    def load_constraint_configuration(self, file_path: str) -> bool:
+        """
+        Load constraint configuration from a file.
+        
+        Args:
+            file_path: Path to the configuration file
             
-        # Calculate total supply per pan type across all weeks
-        total_supply = {}
-        for pan_type in self.pan_types:
-            total_supply[pan_type] = sum(
-                self.supply_dict.get((pan_type, week), 0)
-                for week in self.weeks
-            )
+        Returns:
+            bool: True if the configuration was loaded successfully, False otherwise
+        """
+        return self.constraint_manager.load_configuration(file_path)
+    
+    def create_solver_with_constraints(self, solver_name: str, **kwargs) -> Any:
+        """
+        Create a solver with the configured constraints.
+        
+        Args:
+            solver_name: Name of the solver
+            **kwargs: Additional arguments for the solver
             
-        # Create a mapping of waffle types to compatible pan types
-        compatible_pans = {}
-        for waffle_type in self.waffle_types:
-            compatible_pans[waffle_type] = [
-                pan_type for pan_type in self.pan_types
-                if self.allowed_dict.get((waffle_type, pan_type), False)
-            ]
-            
-        # Create a mapping of pan types to the waffle types they can produce
-        compatible_waffles = {}
-        for pan_type in self.pan_types:
-            compatible_waffles[pan_type] = [
-                waffle_type for waffle_type in self.waffle_types
-                if self.allowed_dict.get((waffle_type, pan_type), False)
-            ]
-            
-        # Return the feasibility data
-        return {
-            'waffle_types': self.waffle_types,
-            'pan_types': self.pan_types,
-            'weeks': self.weeks,
-            'total_demand': total_demand,
-            'total_supply': total_supply,
-            'wpp': self.wpp_dict,
-            'compatible_pans': compatible_pans,
-            'compatible_waffles': compatible_waffles
-        } 
+        Returns:
+            Any: Solver instance
+        """
+        return self.constraint_manager.get_solver_manager().create_solver(solver_name, **kwargs) 

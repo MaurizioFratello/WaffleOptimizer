@@ -3,7 +3,8 @@ Optimization status widget for displaying solver progress and status.
 """
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                             QProgressBar, QPushButton)
-from PyQt6.QtCore import Qt, pyqtSignal, QTimer
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QCoreApplication
+import logging
 
 class OptimizationStatus(QWidget):
     """
@@ -104,6 +105,9 @@ class OptimizationStatus(QWidget):
             gap: Optional optimality gap to display
             iterations: Optional iteration count to display
         """
+        # Ensure progress value is within bounds
+        value = max(0, min(100, value))
+        
         self.progress_bar.setValue(value)
         
         if status_text:
@@ -123,14 +127,34 @@ class OptimizationStatus(QWidget):
             success: Whether the optimization succeeded
             message: Optional message to display
         """
+        logger = logging.getLogger(__name__)
+        
+        logger.debug(f"Finishing optimization - success: {success}, message: {message}")
+        
+        # Stop timer first
         self.timer.stop()
         self.cancel_button.setEnabled(False)
         
+        # Ensure consistent state
         if success:
-            self.progress_bar.setValue(100)
+            logger.debug("Setting progress to 100% for successful optimization")
+            # For successful optimizations, always ensure progress is 100%
+            # This ensures consistency between progress bar and status message
+            current_value = self.progress_bar.value()
+            if current_value < 100:
+                logger.debug(f"Updating progress from {current_value} to 100")
+                self.progress_bar.setValue(100)
+            
+            # Update status message
             self.status_label.setText(message or "Optimization complete")
         else:
+            # For failed optimizations, keep progress as is
+            logger.debug(f"Keeping progress at {self.progress_bar.value()} for unsuccessful optimization")
+            # Update status message for consistency
             self.status_label.setText(message or "Optimization failed")
+        
+        # Process events immediately to ensure UI update
+        QCoreApplication.processEvents()
     
     def reset(self):
         """Reset the status widget to its initial state."""
