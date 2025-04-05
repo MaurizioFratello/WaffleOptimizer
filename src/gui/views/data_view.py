@@ -16,6 +16,23 @@ from src.models.parameter_registry import ParameterRegistry
 
 logger = logging.getLogger(__name__)
 
+def format_cost_value(value):
+    """
+    Format a cost value to two decimal places with € symbol.
+    
+    Args:
+        value: The value to format
+        
+    Returns:
+        Formatted string with € symbol
+    """
+    try:
+        # Convert to float and format
+        return f"{float(value):.2f} €"
+    except (ValueError, TypeError):
+        # Return original value if not a number
+        return str(value)
+
 class DataView(ParameterAwareView):
     """
     View for configuring data input files and previewing data.
@@ -29,7 +46,7 @@ class DataView(ParameterAwareView):
             description="Configure the input data files for waffle production optimization. "
                       "All files should be in Excel (.xlsx) format.",
             main_window=main_window,
-            action_button_text="Validate Data",
+            action_button_text="Check Data Completeness",
             model_name="data"
         )
         
@@ -97,6 +114,9 @@ class DataView(ParameterAwareView):
         self.preview_tables = {}
         for key, label, _ in file_configs:
             table = DataTable()
+            # Set formatting function for cost data
+            if key == "cost":
+                table.set_format_function(format_cost_value)
             self.preview_tables[key] = table
             self.preview_tabs.addTab(table, label)
         

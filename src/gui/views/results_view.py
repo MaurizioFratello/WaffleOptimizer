@@ -204,20 +204,30 @@ class ResultsView(BaseView):
         # Enable export button
         self.export_button.setEnabled(True)
         
-        # Update metric cards
-        objective_value = results.get('objective_value', 0)
-        objective_type = results.get('objective_type', 'cost')
-        
-        # Format objective value with appropriate units
-        if objective_type == 'cost':
-            objective_text = f"{objective_value:.2f} EUR"
-        else:  # 'output' or any other type
-            objective_text = f"{objective_value:.0f} units"
-            
-        self._update_metric_card(self.objective_card, objective_text)
-        
+        # Get status first to determine how to handle other metrics
         status = results.get('status', 'Unknown')
         self._update_metric_card(self.status_card, status)
+        
+        # Update metric cards
+        objective_value = results.get('objective_value', None)
+        objective_type = results.get('objective_type', 'cost')
+        
+        # Handle objective value based on status
+        if status in ['INFEASIBLE', 'UNBOUNDED', 'ABNORMAL', 'ERROR']:
+            # For these statuses, there's no valid objective value
+            objective_text = "N/A"
+        else:
+            # Only try to format the objective value if we have a valid status and value
+            if objective_value is not None:
+                # Format objective value with appropriate units
+                if objective_type == 'cost':
+                    objective_text = f"{objective_value:.2f} EUR"
+                else:  # 'output' or any other type
+                    objective_text = f"{objective_value:.0f} units"
+            else:
+                objective_text = "0.00 EUR"
+            
+        self._update_metric_card(self.objective_card, objective_text)
         
         solve_time = results.get('solve_time', 0)
         self._update_metric_card(self.time_card, f"{solve_time:.2f} seconds")
@@ -228,12 +238,18 @@ class ResultsView(BaseView):
         # Update production table
         if "production" in results:
             self.production_table.load_dataframe(results["production"])
+        else:
+            # Clear the table if no production data
+            self.production_table.load_dataframe(pd.DataFrame())
         
         # Update metrics table
         if "metrics" in results:
             # Convert metrics dict to DataFrame for display
             metrics_df = pd.DataFrame([results["metrics"]])
             self.metrics_table.load_dataframe(metrics_df)
+        else:
+            # Clear the table if no metrics data
+            self.metrics_table.load_dataframe(pd.DataFrame())
         
         # Update export path
         output_path = results.get("output_path", "")

@@ -224,6 +224,12 @@ class OptimizationView(ParameterAwareView):
         self.constraint_manager = ConstraintManager()
         self.constraint_manager.set_controller(self.optimization_controller)
         
+        # Make sure production constraints are disabled
+        if self.optimization_controller:
+            # Explicitly disable production_rate and minimum_batch constraints
+            self.optimization_controller.toggle_constraint('production_rate', False)
+            self.optimization_controller.toggle_constraint('minimum_batch', False)
+        
         # Add to layout
         constraint_layout.addWidget(self.constraint_manager)
         

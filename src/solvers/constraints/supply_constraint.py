@@ -28,6 +28,7 @@ class SupplyConstraint(Constraint):
             cumulative: If True, unused pans from earlier weeks can be used in later weeks
                         If False, unused pans from earlier weeks cannot be used
         """
+        logger.info(f"Initializing SupplyConstraint with cumulative={cumulative}")
         self.cumulative = cumulative
     
     def apply_to_ortools(self, solver: Any, variables: Dict, data: Dict) -> None:
@@ -42,6 +43,8 @@ class SupplyConstraint(Constraint):
         pan_types = data['pan_types']
         weeks = sorted(data['weeks'])
         supply = data['supply']
+        
+        logger.info(f"Applying supply constraint to OR-Tools model with cumulative={self.cumulative}")
         
         if self.cumulative:
             # Cumulative supply constraints - allow unused pans to carry over
@@ -96,6 +99,8 @@ class SupplyConstraint(Constraint):
         pan_types = data['pan_types']
         weeks = sorted(data['weeks'])
         supply = data['supply']
+        
+        #logger.info(f"Applying supply constraint to PuLP model with cumulative={self.cumulative}")
         
         if self.cumulative:
             # Cumulative supply constraints - allow unused pans to carry over

@@ -32,8 +32,10 @@ def setup_logging():
     
     # Set specific log levels for different modules
     logging.getLogger('src.solvers').setLevel(logging.DEBUG)
+    logging.getLogger('src.solvers.constraints').setLevel(logging.INFO)
     logging.getLogger('src.data').setLevel(logging.DEBUG)
     logging.getLogger('src.gui').setLevel(logging.INFO)
+    logging.getLogger('src.models').setLevel(logging.INFO)
     
     logger = logging.getLogger(__name__)
     logger.info("Logging initialized")

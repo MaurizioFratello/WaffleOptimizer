@@ -24,6 +24,18 @@ class DataTable(QTableView):
         # Create empty model
         self.model = QStandardItemModel()
         self.setModel(self.model)
+        
+        # Store formatting function
+        self.format_function = None
+    
+    def set_format_function(self, format_func):
+        """
+        Set a formatting function to be applied to values.
+        
+        Args:
+            format_func: Function that takes a value and returns a formatted string
+        """
+        self.format_function = format_func
     
     def load_dataframe(self, df, max_rows=1000):
         """
@@ -51,7 +63,12 @@ class DataTable(QTableView):
         
         for row in range(len(df)):
             for col in range(len(df.columns)):
-                value = str(df.iloc[row, col])
+                value = df.iloc[row, col]
+                # Apply formatting if function is set
+                if self.format_function is not None:
+                    value = self.format_function(value)
+                else:
+                    value = str(value)
                 item = QStandardItem(value)
                 self.model.setItem(row, col, item)
         

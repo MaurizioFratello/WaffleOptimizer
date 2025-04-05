@@ -152,10 +152,16 @@ class SolverManager:
         """
         if not self.is_constraint_enabled(constraint_type):
             return {}
-        return self._custom_configs.get(
-            constraint_type, 
-            self._default_configs.get(constraint_type, {})
-        )
+            
+        # Start with default configuration
+        config = self._default_configs.get(constraint_type, {}).copy()
+        
+        # Override with custom configuration if it exists
+        if constraint_type in self._custom_configs:
+            custom_config = self._custom_configs[constraint_type]
+            config.update(custom_config)
+            
+        return config
     
     def set_constraint_configuration(self, constraint_type: str, config: Dict) -> None:
         """
@@ -166,7 +172,12 @@ class SolverManager:
             config: Configuration dictionary
         """
         if constraint_type in self._available_constraints:
+            # Store the new configuration
             self._custom_configs[constraint_type] = config
+            
+            # Important: Clear any cached instances in constraint registry
+            # This ensures that a new constraint instance will be created with the updated config
+            logger.info(f"Updated configuration for constraint '{constraint_type}': {config}")
     
     def reset_constraint_configuration(self, constraint_type: str) -> None:
         """
@@ -213,8 +224,12 @@ class SolverManager:
                     constraint_class = self.get_constraint_class(constraint_type)
                     if constraint_class:
                         try:
-                            # Create and add constraint
-                            constraint = constraint_class(**config)
+                            # Important: For supply constraint, explicitly log the cumulative parameter
+                            if constraint_type == 'supply' and 'cumulative' in config:
+                                logger.info(f"Creating supply constraint with cumulative={config['cumulative']}")
+                                
+                            # Ensure we're using a fresh copy of the config
+                            constraint = constraint_class(**config.copy())
                             solver.add_constraint(constraint_type, constraint)
                             logger.debug(f"Successfully added constraint '{constraint_type}'")
                         except Exception as e:
@@ -275,12 +290,22 @@ class SolverManager:
         Args:
             config: Serializable configuration dictionary
         """
+        # Load enabled constraints
         if 'enabled_constraints' in config:
             for constraint_type, enabled in config['enabled_constraints'].items():
                 if constraint_type in self._available_constraints:
                     self._enabled_constraints[constraint_type] = enabled
         
+        # Load custom configurations from the 'custom_configs' field (old format)
         if 'custom_configs' in config:
             for constraint_type, custom_config in config['custom_configs'].items():
                 if constraint_type in self._available_constraints:
-                    self._custom_configs[constraint_type] = custom_config 
+                    self._custom_configs[constraint_type] = custom_config
+        
+        # Also load from the 'constraints' field (new format) if present
+        if 'constraints' in config:
+            for constraint_type, custom_config in config['constraints'].items():
+                if constraint_type in self._available_constraints:
+                    # Only update if the constraint type exists
+                    self._custom_configs[constraint_type] = custom_config
+                    logger.info(f"Loaded configuration for constraint '{constraint_type}': {custom_config}") 

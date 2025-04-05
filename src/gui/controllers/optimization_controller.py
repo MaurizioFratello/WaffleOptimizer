@@ -289,18 +289,74 @@ class OptimizationController(QObject):
             
             # Create new data processor
             self.data_processor = DataProcessor(debug_mode=config.get('debug', False))
+
+            constraint_config_path = config.get('constraint_config', None)
+            constraints_loaded_from_file = False
+
+            # Attempt to load data, including constraints if path is provided
+            try:
+                 self.data_processor.load_data(
+                    demand_file=config.get('demand', ''),
+                    supply_file=config.get('supply', ''),
+                    cost_file=config.get('cost', ''),
+                    wpp_file=config.get('wpp', ''),
+                    combinations_file=config.get('combinations', ''),
+                    constraint_config_file=constraint_config_path # Pass the path here
+                 )
+                 # Check if constraints were actually loaded from the file
+                 if constraint_config_path and self.data_processor.get_constraint_manager().config_file == constraint_config_path:
+                      constraints_loaded_from_file = True
+                      logger.info(f"Constraint configuration successfully loaded from: {constraint_config_path}")
+                      # Ensure the loaded path is set in params
+                      self.data_params.set_parameter("constraint_config_file", constraint_config_path)
             
-            # Load data
-            self.data_processor.load_data(
-                demand_file=config.get('demand', ''),
-                supply_file=config.get('supply', ''),
-                cost_file=config.get('cost', ''),
-                wpp_file=config.get('wpp', ''),
-                combinations_file=config.get('combinations', ''),
-                constraint_config_file=config.get('constraint_config', None)
-            )
+            except FileNotFoundError as fnf_error:
+                 # Handle case where constraint file specifically is not found, but other data might be okay
+                 if constraint_config_path and constraint_config_path in str(fnf_error):
+                     logger.warning(f"Constraint config file not found: {constraint_config_path}. Will use/create default.")
+                     # Reload basic data without the missing constraint file
+                     self.data_processor.load_data(
+                         demand_file=config.get('demand', ''),
+                         supply_file=config.get('supply', ''),
+                         cost_file=config.get('cost', ''),
+                         wpp_file=config.get('wpp', ''),
+                         combinations_file=config.get('combinations', '')
+                         # Omit constraint_config_file this time
+                     )
+                 else:
+                     # Re-raise if it was a different file not found
+                     raise fnf_error
+            except Exception as load_error:
+                 # Re-raise other data loading errors
+                 raise load_error
+
+            # If constraints weren't loaded from a specific file, use/create a default
+            if not constraints_loaded_from_file:
+                 default_config_dir = "data/config"
+                 default_config_filename = "default_constraints.json"
+                 default_config_path = os.path.join(default_config_dir, default_config_filename)
+
+                 logger.info(f"No valid constraint file loaded or specified. Using/creating default path: {default_config_path}")
+                 
+                 # Ensure the default directory exists
+                 os.makedirs(default_config_dir, exist_ok=True)
+
+                 # Set this default path in the parameters so auto-save can find it
+                 self.data_params.set_parameter("constraint_config_file", default_config_path)
+                 logger.debug(f"Set constraint_config_file parameter to default: {default_config_path}")
+
+                 # Attempt to save the current (default) configuration to the default path
+                 # This might fail if permissions are wrong, but the path is now set for later auto-saves
+                 try:
+                     save_success = self.save_constraint_configuration(default_config_path)
+                     if save_success:
+                         logger.info(f"Saved initial default constraint configuration to {default_config_path}")
+                     else:
+                         logger.warning(f"Failed to save initial default constraint configuration to {default_config_path}. Check logs.")
+                 except Exception as save_err:
+                     logger.error(f"Error during initial save of default constraint configuration to {default_config_path}: {save_err}")
             
-            # Update available constraints in parameter model
+            # Update available constraints in parameter model (should happen AFTER potentially saving default)
             constraints = self.data_processor.get_constraint_manager().get_available_constraints()
             self.optimization_params.set_parameter("available_constraints", constraints)
             
@@ -388,6 +444,27 @@ class OptimizationController(QObject):
             
         return result
     
+    def save_current_constraint_configuration(self):
+        """
+        Save the current constraint configuration to the currently configured file path.
+        
+        Returns:
+            bool: True if the configuration was saved successfully, False otherwise
+            
+        Raises:
+            ValueError: If no constraint configuration file path is set
+        """
+        # Get the current constraint configuration file path
+        file_path = self.data_params.get_parameter("constraint_config_file")
+        
+        if not file_path:
+            error_msg = "No constraint configuration file path is set. Cannot save configuration."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+            
+        logger.debug(f"Auto-saving constraint configuration to current path: {file_path}")
+        return self.save_constraint_configuration(file_path)
+    
     def load_constraint_configuration(self, file_path):
         """
         Load constraint configuration from a file.
@@ -464,4 +541,56 @@ class OptimizationController(QObject):
             error_msg = f"Error exporting results: {str(e)}"
             logger.error(error_msg)
             self.optimization_error.emit(error_msg)
-            return False 
+            return False
+    
+    def toggle_constraint(self, constraint_name, enabled):
+        """
+        Enable or disable a constraint.
+        
+        Args:
+            constraint_name: Name of the constraint
+            enabled: Whether the constraint should be enabled
+        """
+        logger.debug(f"Toggling constraint '{constraint_name}' enabled={enabled}")
+        
+        # Always disable production_rate and minimum_batch constraints
+        if constraint_name in ['production_rate', 'minimum_batch']:
+            enabled = False
+        
+        # Call the existing method with the new name
+        self.set_constraint_enabled(constraint_name, enabled)
+    
+    def configure_constraint(self, constraint_name, config):
+        """
+        Set the configuration for a constraint.
+        
+        Args:
+            constraint_name: Name of the constraint
+            config: Configuration dictionary
+        """
+        logger.info(f"Configuring constraint '{constraint_name}': {config}")
+        
+        # FIX: Add special handling for supply constraint to ensure cumulative parameter is correctly captured
+        if constraint_name == 'supply' and 'cumulative' in config:
+            logger.info(f"Setting supply constraint cumulative parameter to {config['cumulative']}")
+        
+        # Force recreation of the solver manager to ensure configuration changes are applied
+        # This ensures any cached constraint instances are discarded
+        if hasattr(self, 'data_processor') and self.data_processor:
+            # Get the current manager
+            manager = self.data_processor.get_constraint_manager()
+            
+            # Set the new configuration
+            manager.set_constraint_configuration(constraint_name, config)
+            
+            # Update parameter model with constraint configuration
+            constraint_configs = self.optimization_params.get_parameter("constraint_configs", {})
+            constraint_configs[constraint_name] = config
+            self.optimization_params.set_parameter("constraint_configs", constraint_configs)
+            
+            # The next optimization run will create fresh constraint instances with the new config
+            logger.info(f"Updated configuration for '{constraint_name}': {config}")
+        else:
+            logger.warning(f"Cannot configure '{constraint_name}': Data processor not initialized")
+            # Still update the parameter model
+            self.set_constraint_configuration(constraint_name, config) 
