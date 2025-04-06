@@ -84,10 +84,7 @@ class OptimizationWorker(QObject):
             if self.config.get('objective', 'cost') == 'cost':
                 solver.build_minimize_cost_model(optimization_data)
             else:
-                solver.build_maximize_output_model(
-                    optimization_data,
-                    limit_to_demand=self.config.get('limit_to_demand', False)
-                )
+                solver.build_maximize_output_model(optimization_data)
             
             # Check if cancelled
             if self.cancelled:
@@ -262,7 +259,6 @@ class OptimizationController(QObject):
                 "solver": self.optimization_params.get_parameter("solver", "ortools"),
                 "time_limit": self.optimization_params.get_parameter("time_limit", 60),
                 "gap": self.optimization_params.get_parameter("gap", 0.005),
-                "limit_to_demand": self.optimization_params.get_parameter("limit_to_demand", True),
                 "debug": self.optimization_params.get_parameter("debug_mode", False),
                 
                 # Output settings

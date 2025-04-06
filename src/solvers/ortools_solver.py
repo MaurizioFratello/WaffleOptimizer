@@ -110,17 +110,14 @@ class ORToolsSolver(SolverInterface):
         self.apply_constraints()
         logger.info("Cost minimization model built successfully")
     
-    def build_maximize_output_model(self, data: Dict, limit_to_demand: bool = False) -> None:
+    def build_maximize_output_model(self, data: Dict) -> None:
         """
         Build an optimization model to maximize waffle output.
         
         Args:
             data: Dictionary containing optimization data
-            limit_to_demand: If True, production will be limited to exactly meet demand
-                             If False (default), production can exceed demand
         """
         logger.info("Building output maximization model")
-        logger.debug(f"Limit to demand: {limit_to_demand}")
         
         self.data = data
         self.model_type = 'maximize_output'

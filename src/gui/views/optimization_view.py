@@ -79,7 +79,6 @@ class OptimizationView(ParameterAwareView):
         self._bind_double_spin_box(self.gap, "gap")
         
         # For checkboxes
-        self._bind_check_box(self.limit_to_demand, "limit_to_demand")
         self._bind_check_box(self.debug_mode, "debug_mode")
         
         # For output path (text)
@@ -151,11 +150,6 @@ class OptimizationView(ParameterAwareView):
         self.gap.setSingleStep(0.001)
         self.gap.setValue(0.005)  # 0.5% default
         form_layout.addRow("Optimality Gap:", self.gap)
-        
-        # Additional options
-        self.limit_to_demand = QCheckBox("Limit production to demand")
-        self.limit_to_demand.setChecked(True)
-        form_layout.addRow("Options:", self.limit_to_demand)
         
         # Debug mode
         self.debug_mode = QCheckBox("Enable debug output")
@@ -260,10 +254,6 @@ class OptimizationView(ParameterAwareView):
         gap = self.settings.value("optimization/gap", 0.005, float)
         self.param_model.set_parameter("gap", gap, emit_signal=False)
         
-        # Limit to demand
-        limit_to_demand = self.settings.value("optimization/limit_to_demand", True, bool)
-        self.param_model.set_parameter("limit_to_demand", limit_to_demand, emit_signal=False)
-        
         # Debug mode
         debug_mode = self.settings.value("optimization/debug_mode", False, bool)
         self.param_model.set_parameter("debug_mode", debug_mode, emit_signal=False)
@@ -296,7 +286,6 @@ class OptimizationView(ParameterAwareView):
         self.settings.setValue("optimization/solver_index", self.solver_combo.currentIndex())
         self.settings.setValue("optimization/time_limit", self.time_limit.value())
         self.settings.setValue("optimization/gap", self.gap.value())
-        self.settings.setValue("optimization/limit_to_demand", self.limit_to_demand.isChecked())
         self.settings.setValue("optimization/debug_mode", self.debug_mode.isChecked())
         self.settings.setValue("optimization/output_path", self.output_path.currentText())
         self.settings.setValue("optimization/export_format", self.export_format.currentIndex())
