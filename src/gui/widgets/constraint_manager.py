@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                           QPushButton, QCheckBox, QGroupBox, QScrollArea,
                           QFormLayout, QSpinBox, QDoubleSpinBox, QComboBox,
                           QDialog, QDialogButtonBox, QFileDialog, QMessageBox,
-                          QTabWidget)
+                          QTabWidget, QGridLayout, QFrame)
 from PyQt6.QtCore import Qt, pyqtSignal, QSize
 from PyQt6.QtGui import QFont
 import logging
@@ -92,6 +92,27 @@ class ConstraintConfigDialog(QDialog):
                 if prop_description:
                     widget.setToolTip(prop_description)
                 
+                # Store a reference to the widget for later use
+                widget.setObjectName(f"config_{constraint_info['name']}_{prop_name}")
+                
+                # Connect widget signals to auto-save function
+                if isinstance(widget, QCheckBox):
+                    widget.stateChanged.connect(
+                        lambda _, info=constraint_info: self._save_constraint_configuration(info)
+                    )
+                elif isinstance(widget, QSpinBox):
+                    widget.valueChanged.connect(
+                        lambda _, info=constraint_info: self._save_constraint_configuration(info)
+                    )
+                elif isinstance(widget, QDoubleSpinBox):
+                    widget.valueChanged.connect(
+                        lambda _, info=constraint_info: self._save_constraint_configuration(info)
+                    )
+                elif isinstance(widget, QComboBox):
+                    widget.currentIndexChanged.connect(
+                        lambda _, info=constraint_info: self._save_constraint_configuration(info)
+                    )
+                
                 # Add row to form
                 form_layout.addRow(QLabel(prop_title), widget)
         
@@ -129,7 +150,7 @@ class ConstraintConfigDialog(QDialog):
 
 
 class ConstraintTab(QWidget):
-    """A tab containing related constraints."""
+    """A tab containing constraints with direct configuration controls."""
     
     def __init__(self, title, description, parent=None):
         super().__init__(parent)
@@ -148,70 +169,35 @@ class ConstraintTab(QWidget):
         header.setFont(header_font)
         self.layout.addWidget(header)
         
-        # Add description
-        if description:
-            desc = QLabel(description)
-            desc.setWordWrap(True)
-            desc.setStyleSheet("color: #666;")
-            self.layout.addWidget(desc)
-        
-        # Create scroll area for constraints
+        # Create scroll area
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         
-        # Create widget to hold constraints
+        # Create container widget with vertical layout
         self.constraints_widget = QWidget()
         self.constraints_layout = QVBoxLayout(self.constraints_widget)
-        self.constraints_layout.setContentsMargins(0, 0, 0, 0)
-        self.constraints_layout.setSpacing(10)
+        self.constraints_layout.setContentsMargins(10, 10, 10, 10)
+        self.constraints_layout.setSpacing(20)
         
         # Add constraints widget to scroll area
         self.scroll.setWidget(self.constraints_widget)
         self.layout.addWidget(self.scroll)
-        
-        # Add stretch at the bottom
-        self.layout.addStretch()
     
     def add_constraint(self, constraint_info):
-        """Add a constraint to this tab."""
+        """Add a constraint with direct configuration controls."""
         # Skip production-related constraints
         if constraint_info['name'] in ['production_rate', 'minimum_batch']:
             return
-            
-        # Create group box for constraint
-        group = QGroupBox()
-        group.setObjectName("constraintGroup")
-        group_layout = QVBoxLayout(group)
-        group_layout.setContentsMargins(15, 15, 15, 15)
         
-        # Format constraint name for display (convert from technical name to display name)
-        display_name = constraint_info['name']
-        if display_name == 'demand':
-            display_name = "Demand Constraint"
-        elif display_name == 'supply':
-            display_name = "Supply Constraint"
-        elif display_name == 'allowed_combinations':
-            display_name = "Allowed Combinations Constraint"
+        # Create constraint container
+        constraint_container = QWidget()
+        container_layout = QVBoxLayout(constraint_container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(15)
         
-        # Add title
-        title = QLabel(display_name)
-        title_font = QFont()
-        title_font.setBold(True)
-        title.setFont(title_font)
-        group_layout.addWidget(title)
-        
-        # Add description
-        description = QLabel(constraint_info['description'])
-        description.setWordWrap(True)
-        description.setStyleSheet("color: #666; margin-bottom: 10px;")
-        group_layout.addWidget(description)
-        
-        # Add controls layout
-        controls = QHBoxLayout()
-        
-        # Add enabled checkbox
-        enabled_checkbox = QCheckBox("Enable Constraint")
+        # Add Active checkbox
+        enabled_checkbox = QCheckBox("Active")
         enabled_checkbox.setChecked(constraint_info.get('enabled', False))
         enabled_checkbox.stateChanged.connect(
             lambda state, name=constraint_info['name']: 
@@ -219,27 +205,146 @@ class ConstraintTab(QWidget):
                 name, state == Qt.CheckState.Checked.value
             )
         )
-        controls.addWidget(enabled_checkbox)
+        container_layout.addWidget(enabled_checkbox)
         
-        # Add configure button
-        configure_button = QPushButton("Configure")
-        configure_button.setObjectName("configureButton")
-        configure_button.clicked.connect(
-            lambda _, info=constraint_info: 
-            self.parent().parent().parent()._configure_constraint(info)
-        )
-        controls.addWidget(configure_button)
+        # Add Constraint parameters section
+        params_label = QLabel("Constraint parameters:")
+        params_label.setProperty("class", "section-header")
+        container_layout.addWidget(params_label)
         
-        # Add validation status
-        validation = QLabel("✓ Valid")  # Can be updated based on validation state
-        validation.setStyleSheet("color: #2ecc71;")
-        controls.addWidget(validation)
+        # Add configuration parameters
+        params_container = QWidget()
+        params_layout = QVBoxLayout(params_container)
+        params_layout.setContentsMargins(20, 0, 0, 0)  # Add left indent
+        params_layout.setSpacing(10)
         
-        controls.addStretch()
-        group_layout.addLayout(controls)
+        # Get schema and current configuration
+        schema = constraint_info.get('schema', {})
+        current_config = constraint_info.get('config', {})
         
-        # Add to constraints layout
-        self.constraints_layout.addWidget(group)
+        if 'properties' in schema:
+            for prop_name, prop_schema in schema['properties'].items():
+                # Get property details
+                prop_type = prop_schema.get('type', 'string')
+                prop_title = prop_schema.get('title', prop_name)
+                prop_description = prop_schema.get('description', '')
+                current_value = current_config.get(prop_name)
+                
+                # Create appropriate widget based on type
+                if prop_type == 'boolean':
+                    widget = QCheckBox(prop_title)
+                    widget.setChecked(bool(current_value))
+                
+                elif prop_type == 'integer':
+                    widget = QSpinBox()
+                    minimum = prop_schema.get('minimum', -999999)
+                    maximum = prop_schema.get('maximum', 999999)
+                    widget.setRange(int(minimum), int(maximum))
+                    if current_value is not None:
+                        widget.setValue(int(current_value))
+                
+                elif prop_type == 'number':
+                    widget = QDoubleSpinBox()
+                    minimum = prop_schema.get('minimum', -999999.0)
+                    maximum = prop_schema.get('maximum', 999999.0)
+                    widget.setRange(float(minimum), float(maximum))
+                    widget.setDecimals(4)
+                    widget.setSingleStep(0.01)
+                    if current_value is not None:
+                        widget.setValue(float(current_value))
+                
+                elif prop_type == 'string' and 'enum' in prop_schema:
+                    widget = QComboBox()
+                    for option in prop_schema['enum']:
+                        widget.addItem(str(option))
+                    if current_value is not None:
+                        index = widget.findText(str(current_value))
+                        if index >= 0:
+                            widget.setCurrentIndex(index)
+                
+                else:  # Default to string or unsupported types
+                    continue  # Skip unsupported types for now
+                
+                # Add tooltip if description available
+                if prop_description:
+                    widget.setToolTip(prop_description)
+                
+                # Store a reference to the widget for later use
+                widget.setObjectName(f"config_{constraint_info['name']}_{prop_name}")
+                
+                # Connect widget signals to auto-save function
+                if isinstance(widget, QCheckBox):
+                    widget.stateChanged.connect(
+                        lambda _, info=constraint_info: self._save_constraint_configuration(info)
+                    )
+                elif isinstance(widget, QSpinBox):
+                    widget.valueChanged.connect(
+                        lambda _, info=constraint_info: self._save_constraint_configuration(info)
+                    )
+                elif isinstance(widget, QDoubleSpinBox):
+                    widget.valueChanged.connect(
+                        lambda _, info=constraint_info: self._save_constraint_configuration(info)
+                    )
+                elif isinstance(widget, QComboBox):
+                    widget.currentIndexChanged.connect(
+                        lambda _, info=constraint_info: self._save_constraint_configuration(info)
+                    )
+                
+                # Add widget to params layout
+                params_layout.addWidget(widget)
+        
+        container_layout.addWidget(params_container)
+        
+        # Add description
+        description = QLabel("Description:")
+        description.setProperty("class", "section-header")
+        container_layout.addWidget(description)
+        
+        desc_text = QLabel(constraint_info['description'])
+        desc_text.setWordWrap(True)
+        desc_text.setStyleSheet("color: #666; margin-left: 20px;")  # Add left indent
+        container_layout.addWidget(desc_text)
+        
+        # Add horizontal separator
+        separator = QFrame()
+        separator.setFrameShape(QFrame.Shape.HLine)
+        separator.setFrameShadow(QFrame.Shadow.Sunken)
+        separator.setProperty("class", "separator")
+        separator.setStyleSheet("margin-top: 20px; margin-bottom: 20px;")
+        container_layout.addWidget(separator)
+        
+        # Add constraint to layout
+        self.constraints_layout.addWidget(constraint_container)
+    
+    def _save_constraint_configuration(self, constraint_info):
+        """Save the configuration for a constraint."""
+        # Get all configuration values from widgets
+        config = {}
+        
+        # Get schema properties
+        schema = constraint_info.get('schema', {})
+        if 'properties' in schema:
+            for prop_name in schema['properties'].keys():
+                # Find the widget
+                widget_name = f"config_{constraint_info['name']}_{prop_name}"
+                widget = self.findChild(QWidget, widget_name)
+                
+                if widget:
+                    # Get value based on widget type
+                    if isinstance(widget, QCheckBox):
+                        config[prop_name] = widget.isChecked()
+                    elif isinstance(widget, QSpinBox):
+                        config[prop_name] = widget.value()
+                    elif isinstance(widget, QDoubleSpinBox):
+                        config[prop_name] = widget.value()
+                    elif isinstance(widget, QComboBox):
+                        config[prop_name] = widget.currentText()
+        
+        # Apply configuration
+        if config:
+            self.parent().parent().parent()._configure_constraint_directly(
+                constraint_info['name'], config
+            )
 
 
 class ConstraintManager(QWidget):
@@ -254,6 +359,7 @@ class ConstraintManager(QWidget):
         # Initialize attributes
         self.controller = None
         self.constraints = []
+        self.optimization_results = None  # Store optimization results
         
         # Create layout
         self.main_layout = QVBoxLayout(self)
@@ -327,23 +433,27 @@ class ConstraintManager(QWidget):
                 border-bottom: 1px solid white;
             }
             
-            #constraintGroup {
-                border: 1px solid #bdc3c7;
-                border-radius: 4px;
-                background: white;
+            QCheckBox {
+                spacing: 8px;
+                min-height: 20px;
             }
             
-            #configureButton {
-                padding: 4px 12px;
-                border: 1px solid #3498db;
-                border-radius: 3px;
-                color: #3498db;
-                background: white;
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
             }
             
-            #configureButton:hover {
-                background: #3498db;
-                color: white;
+            QLabel {
+                margin-top: 5px;
+            }
+            
+            QLabel[class="section-header"] {
+                font-weight: bold;
+                margin-top: 15px;
+            }
+            
+            QFrame[class="separator"] {
+                color: #ddd;
             }
             
             #saveButton, #loadButton {
@@ -358,6 +468,23 @@ class ConstraintManager(QWidget):
             }
         """)
     
+    def set_optimization_results(self, results):
+        """Store optimization results and update constraint cards."""
+        logger.info("Received optimization results - updating constraint metrics")
+        self.optimization_results = results
+        self._update_constraint_metrics()
+    
+    def _update_constraint_metrics(self):
+        """Update metrics in all constraint cards."""
+        # Iterate through all tabs and update cards
+        for tab in [self.demand_tab, self.supply_tab, self.combinations_tab]:
+            for i in range(tab.constraints_layout.count()):
+                item = tab.constraints_layout.itemAt(i)
+                if item and item.widget():
+                    widget = item.widget()
+                    if hasattr(widget, 'update_metrics'):
+                        widget.update_metrics(self.optimization_results)
+    
     def set_controller(self, controller):
         """
         Set the optimization controller to use for constraint management.
@@ -370,6 +497,10 @@ class ConstraintManager(QWidget):
         # Connect to constraints_updated signal if available
         if hasattr(controller, 'constraints_updated'):
             controller.constraints_updated.connect(self._update_constraints)
+            
+        # Connect to optimization_completed signal if available
+        if hasattr(controller, 'optimization_completed'):
+            controller.optimization_completed.connect(self.set_optimization_results)
     
     def _update_constraints(self, constraints):
         """
@@ -567,4 +698,292 @@ class ConstraintManager(QWidget):
                     self,
                     "Error",
                     f"Failed to load configuration: {str(e)}"
-                ) 
+                )
+
+    def _configure_constraint_directly(self, constraint_name, config):
+        """
+        Configure a constraint without a dialog.
+        
+        Args:
+            constraint_name: Name of the constraint
+            config: Dictionary containing configuration values
+        """
+        logger.info(f"Directly configuring constraint '{constraint_name}'")
+        
+        if not self.controller:
+            logger.warning(f"Cannot configure constraint '{constraint_name}': No controller available")
+            return
+            
+        try:
+            # Apply the configuration to the controller
+            self.controller.configure_constraint(constraint_name, config)
+            
+            # Update local constraint info to reflect changes
+            for i, constraint in enumerate(self.constraints):
+                if constraint['name'] == constraint_name:
+                    self.constraints[i]['config'] = config
+                    logger.debug(f"Updated local configuration for '{constraint_name}'")
+                    break
+            
+            # Notify about constraint change
+            self.constraint_changed.emit()
+            
+            # Success notification removed for automatic saving
+            
+            # Log the change
+            logger.info(f"Configuration for constraint '{constraint_name}' updated successfully")
+        except Exception as e:
+            logger.error(f"Error configuring constraint '{constraint_name}': {e}")
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Failed to configure constraint '{constraint_name}': {str(e)}"
+            )
+
+def test_grid_layout():
+    """Simple test function for the grid layout."""
+    from PyQt6.QtWidgets import QApplication
+    import sys
+    
+    app = QApplication(sys.argv)
+    
+    # Create constraint manager
+    manager = ConstraintManager()
+    
+    # Create sample constraints
+    sample_constraints = [
+        {
+            'name': 'demand',
+            'description': 'Ensures that waffle production meets minimum demand requirements.',
+            'enabled': True,
+            'config': {
+                'target_value': 1000,
+                'time_window': 'week'
+            }
+        },
+        {
+            'name': 'supply',
+            'description': 'Ensures that waffle production does not exceed available supply.',
+            'enabled': True,
+            'config': {
+                'max_usage': 500,
+                'consider_inventory': True
+            }
+        },
+        {
+            'name': 'allowed_combinations',
+            'description': 'Restricts which waffle types can be produced on which pans.',
+            'enabled': False,
+            'config': {
+                'enforce_strict': True
+            }
+        }
+    ]
+    
+    # Update constraints
+    manager._update_constraints(sample_constraints)
+    
+    # Show manager
+    manager.show()
+    
+    return app.exec()
+
+def test_constraint_metrics():
+    """Test constraint cards with simulated optimization results."""
+    from PyQt6.QtWidgets import QApplication
+    import sys
+    
+    app = QApplication(sys.argv)
+    
+    # Create constraint manager
+    manager = ConstraintManager()
+    
+    # Create sample constraints
+    sample_constraints = [
+        {
+            'name': 'demand',
+            'description': 'Ensures that waffle production meets minimum demand requirements.',
+            'enabled': True,
+            'config': {
+                'target_value': 1000,
+                'time_window': 'week'
+            }
+        },
+        {
+            'name': 'supply',
+            'description': 'Ensures that waffle production does not exceed available supply.',
+            'enabled': True,
+            'config': {
+                'max_usage': 500,
+                'consider_inventory': True
+            }
+        },
+        {
+            'name': 'allowed_combinations',
+            'description': 'Restricts which waffle types can be produced on which pans.',
+            'enabled': False,
+            'config': {
+                'enforce_strict': True
+            }
+        }
+    ]
+    
+    # Update constraints
+    manager._update_constraints(sample_constraints)
+    
+    # Simulate optimization results
+    simulated_results = {
+        'status': 'OPTIMAL',
+        'objective_value': 12500.75,
+        'constraints': {
+            'demand': {
+                'satisfaction': 0.85,
+                'units_produced': 850,
+                'units_required': 1000
+            },
+            'supply': {
+                'utilization': 0.92,
+                'units_used': 460,
+                'units_available': 500
+            },
+            'allowed_combinations': {
+                'active_count': 8,
+                'total_pairs': 24
+            }
+        }
+    }
+    
+    # Update metrics with simulated results
+    manager.set_optimization_results(simulated_results)
+    
+    # Show manager
+    manager.show()
+    
+    return app.exec()
+
+def test_simplified_constraints():
+    """Test simplified constraint interface."""
+    from PyQt6.QtWidgets import QApplication
+    import sys
+    
+    app = QApplication(sys.argv)
+    
+    # Create constraint manager
+    manager = ConstraintManager()
+    
+    # Create sample constraints
+    sample_constraints = [
+        {
+            'name': 'demand',
+            'description': 'Ensures that waffle production meets minimum demand requirements.',
+            'enabled': True,
+            'schema': {
+                'properties': {
+                    'target_value': {
+                        'type': 'integer',
+                        'title': 'Target Value',
+                        'description': 'Minimum demand to be satisfied',
+                        'minimum': 0,
+                        'maximum': 10000
+                    },
+                    'time_window': {
+                        'type': 'string',
+                        'title': 'Time Window',
+                        'enum': ['day', 'week', 'month']
+                    },
+                    'strict': {
+                        'type': 'boolean',
+                        'title': 'Strict Enforcement',
+                        'description': 'Whether to strictly enforce the demand constraint'
+                    }
+                }
+            },
+            'config': {
+                'target_value': 1000,
+                'time_window': 'week',
+                'strict': True
+            }
+        },
+        {
+            'name': 'supply',
+            'description': 'Ensures that waffle production does not exceed available supply.',
+            'enabled': True,
+            'schema': {
+                'properties': {
+                    'max_usage': {
+                        'type': 'integer',
+                        'title': 'Maximum Usage',
+                        'description': 'Maximum supply that can be used',
+                        'minimum': 0,
+                        'maximum': 10000
+                    },
+                    'consider_inventory': {
+                        'type': 'boolean',
+                        'title': 'Consider Inventory',
+                        'description': 'Whether to consider existing inventory'
+                    }
+                }
+            },
+            'config': {
+                'max_usage': 500,
+                'consider_inventory': True
+            }
+        },
+        {
+            'name': 'allowed_combinations',
+            'description': 'Restricts which waffle types can be produced on which pans.',
+            'enabled': False,
+            'schema': {
+                'properties': {
+                    'enforce_strict': {
+                        'type': 'boolean',
+                        'title': 'Strict Enforcement',
+                        'description': 'Whether to strictly enforce allowed combinations'
+                    },
+                    'priority_level': {
+                        'type': 'integer',
+                        'title': 'Priority Level',
+                        'description': 'Priority level for combinations constraint',
+                        'minimum': 1,
+                        'maximum': 10
+                    }
+                }
+            },
+            'config': {
+                'enforce_strict': True,
+                'priority_level': 5
+            }
+        }
+    ]
+    
+    # Update constraints
+    manager._update_constraints(sample_constraints)
+    
+    # Show manager
+    manager.show()
+    
+    return app.exec()
+
+if __name__ == '__main__':
+    # Choose which test to run
+    import sys
+    run_metrics_test = False
+    run_simplified_test = True
+    
+    try:
+        if len(sys.argv) > 1:
+            if sys.argv[1] == 'metrics':
+                run_metrics_test = True
+                run_simplified_test = False
+            elif sys.argv[1] == 'simplified':
+                run_simplified_test = True
+                run_metrics_test = False
+    except Exception:
+        pass
+        
+    if run_metrics_test:
+        test_constraint_metrics()
+    elif run_simplified_test:
+        test_simplified_constraints()
+    else:
+        test_grid_layout() 
