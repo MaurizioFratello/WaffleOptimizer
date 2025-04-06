@@ -192,12 +192,59 @@ class OptimizationController(QObject):
             # Signal that data path has changed
             self.data_updated.emit()
     
+    def validate_constraints(self):
+        """
+        Validate all constraint configurations.
+        
+        Returns:
+            tuple: (valid, errors) - Boolean indicating if all constraints are valid,
+                   and a list of error messages for invalid constraints
+        """
+        logger.debug("Validating all constraint configurations")
+        
+        # Ensure the data processor exists
+        if not hasattr(self, 'data_processor') or not self.data_processor:
+            logger.warning("Cannot validate constraints: Data processor not initialized")
+            return False, ["Data processor not initialized"]
+        
+        # Get constraint manager
+        manager = self.data_processor.get_constraint_manager()
+        
+        # Get all available constraints
+        constraints = manager.get_available_constraints()
+        
+        # Check each constraint configuration
+        errors = []
+        for constraint_info in constraints:
+            constraint_type = constraint_info['name']
+            config = constraint_info.get('config', {})
+            
+            # Only validate enabled constraints
+            if constraint_info.get('enabled', False):
+                try:
+                    is_valid = manager.validate_constraint_configuration(constraint_type, config)
+                    if not is_valid:
+                        error_msg = f"Invalid configuration for constraint '{constraint_type}'"
+                        logger.error(error_msg)
+                        errors.append(error_msg)
+                except Exception as e:
+                    error_msg = f"Error validating constraint '{constraint_type}': {str(e)}"
+                    logger.error(error_msg)
+                    errors.append(error_msg)
+        
+        is_valid = len(errors) == 0
+        logger.debug(f"Constraint validation result: valid={is_valid}, errors={errors}")
+        return is_valid, errors
+        
     def start_optimization(self, config=None):
         """
         Start an optimization process with the given configuration.
         
         Args:
             config: Dictionary of configuration options (optional)
+            
+        Returns:
+            bool: True if optimization started successfully, False otherwise
         """
         # Get parameters from model if config not provided
         if config is None:
@@ -222,7 +269,15 @@ class OptimizationController(QObject):
                 "output": self.optimization_params.get_parameter("output_path", "")
             }
         
-        logger.debug(f"Starting optimization with config: {config}")
+        logger.info(f"Starting optimization with config: {config}")
+        
+        # Validate constraint configurations before proceeding
+        constraints_valid, constraint_errors = self.validate_constraints()
+        if not constraints_valid:
+            error_msg = "Cannot start optimization due to invalid constraint configurations: " + "; ".join(constraint_errors)
+            logger.error(error_msg)
+            self.optimization_error.emit(error_msg)
+            return False
         
         # Create worker and thread
         self.thread = QThread()
@@ -243,6 +298,7 @@ class OptimizationController(QObject):
         # Start the thread
         self.optimization_started.emit()
         self.thread.start()
+        return True
     
     def cancel_optimization(self):
         """Cancel the current optimization process."""
@@ -551,14 +607,28 @@ class OptimizationController(QObject):
             constraint_name: Name of the constraint
             enabled: Whether the constraint should be enabled
         """
-        logger.debug(f"Toggling constraint '{constraint_name}' enabled={enabled}")
+        logger.info(f"Toggling constraint '{constraint_name}' enabled={enabled}")
         
         # Always disable production_rate and minimum_batch constraints
         if constraint_name in ['production_rate', 'minimum_batch']:
             enabled = False
         
-        # Call the existing method with the new name
-        self.set_constraint_enabled(constraint_name, enabled)
+        # Set constraint enabled state
+        self.data_processor.get_constraint_manager().set_constraint_enabled(constraint_name, enabled)
+        
+        # Update parameter model with constraint state
+        constraint_states = self.optimization_params.get_parameter("constraint_states", {})
+        constraint_states[constraint_name] = enabled
+        self.optimization_params.set_parameter("constraint_states", constraint_states)
+        
+        # Save constraint configuration to ensure persistence
+        try:
+            self.save_current_constraint_configuration()
+            logger.debug(f"Auto-saved configuration after toggling constraint '{constraint_name}'")
+        except Exception as e:
+            logger.warning(f"Could not auto-save constraint configuration: {e}")
+            
+        logger.debug(f"Constraint '{constraint_name}' enabled state set to {enabled}")
     
     def configure_constraint(self, constraint_name, config):
         """
@@ -570,27 +640,35 @@ class OptimizationController(QObject):
         """
         logger.info(f"Configuring constraint '{constraint_name}': {config}")
         
-        # FIX: Add special handling for supply constraint to ensure cumulative parameter is correctly captured
+        # Log important parameters for specific constraint types
         if constraint_name == 'supply' and 'cumulative' in config:
             logger.info(f"Setting supply constraint cumulative parameter to {config['cumulative']}")
         
-        # Force recreation of the solver manager to ensure configuration changes are applied
-        # This ensures any cached constraint instances are discarded
-        if hasattr(self, 'data_processor') and self.data_processor:
-            # Get the current manager
-            manager = self.data_processor.get_constraint_manager()
-            
-            # Set the new configuration
-            manager.set_constraint_configuration(constraint_name, config)
-            
-            # Update parameter model with constraint configuration
+        # Ensure the data processor exists
+        if not hasattr(self, 'data_processor') or not self.data_processor:
+            logger.warning(f"Cannot configure '{constraint_name}': Data processor not initialized")
+            # Still update the parameter model
             constraint_configs = self.optimization_params.get_parameter("constraint_configs", {})
             constraint_configs[constraint_name] = config
             self.optimization_params.set_parameter("constraint_configs", constraint_configs)
-            
-            # The next optimization run will create fresh constraint instances with the new config
-            logger.info(f"Updated configuration for '{constraint_name}': {config}")
-        else:
-            logger.warning(f"Cannot configure '{constraint_name}': Data processor not initialized")
-            # Still update the parameter model
-            self.set_constraint_configuration(constraint_name, config) 
+            return
+        
+        # Get the constraint manager
+        manager = self.data_processor.get_constraint_manager()
+        
+        # Set the configuration
+        manager.set_constraint_configuration(constraint_name, config)
+        
+        # Update parameter model with constraint configuration
+        constraint_configs = self.optimization_params.get_parameter("constraint_configs", {})
+        constraint_configs[constraint_name] = config
+        self.optimization_params.set_parameter("constraint_configs", constraint_configs)
+        
+        # Save constraint configuration to ensure persistence
+        try:
+            self.save_current_constraint_configuration()
+            logger.debug(f"Auto-saved configuration after configuring constraint '{constraint_name}'")
+        except Exception as e:
+            logger.warning(f"Could not auto-save constraint configuration: {e}")
+        
+        logger.info(f"Configuration for constraint '{constraint_name}' updated successfully") 

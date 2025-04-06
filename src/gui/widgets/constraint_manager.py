@@ -438,18 +438,35 @@ class ConstraintManager(QWidget):
             name: Name of the constraint
             enabled: Whether the constraint should be enabled
         """
-        if self.controller:
-            try:
-                self.controller.toggle_constraint(name, enabled)
-                # Automatically save configuration after toggling enabled state
-                try:
-                    self.controller.save_current_constraint_configuration()
-                    logger.debug(f"Auto-saved configuration after toggling '{name}' constraint.")
-                except Exception as e:
-                    logger.error(f"Failed to auto-save configuration after toggling '{name}': {e}")
-                self.constraint_changed.emit()
-            except Exception as e:
-                logger.error(f"Error toggling constraint '{name}': {e}")
+        logger.info(f"Toggling constraint '{name}' to {enabled}")
+        
+        if not self.controller:
+            logger.warning(f"Cannot toggle constraint '{name}': No controller available")
+            return
+            
+        try:
+            # Update the enabled state in the controller
+            self.controller.toggle_constraint(name, enabled)
+            
+            # Update the local state to reflect change
+            for i, constraint in enumerate(self.constraints):
+                if constraint['name'] == name:
+                    self.constraints[i]['enabled'] = enabled
+                    logger.debug(f"Updated local constraint state for '{name}': enabled={enabled}")
+                    break
+            
+            # Notify about constraint change
+            self.constraint_changed.emit()
+            
+            # Log the state change
+            logger.info(f"Constraint '{name}' enabled state set to {enabled}")
+        except Exception as e:
+            logger.error(f"Error toggling constraint '{name}': {e}")
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Failed to toggle constraint '{name}': {str(e)}"
+            )
     
     def _configure_constraint(self, constraint_info):
         """
@@ -458,29 +475,41 @@ class ConstraintManager(QWidget):
         Args:
             constraint_info: Dictionary containing constraint information
         """
+        logger.info(f"Opening configuration dialog for constraint '{constraint_info['name']}'")
+        
         dialog = ConstraintConfigDialog(constraint_info, self)
         
         if dialog.exec() == QDialog.DialogCode.Accepted:
             config = dialog.get_configuration()
+            logger.debug(f"New configuration for '{constraint_info['name']}': {config}")
             
-            if self.controller:
-                try:
-                    self.controller.configure_constraint(constraint_info['name'], config)
-                    # Automatically save configuration after applying changes
-                    try:
-                        self.controller.save_current_constraint_configuration()
-                        logger.debug(f"Auto-saved configuration after configuring '{constraint_info['name']}' constraint.")
-                    except Exception as e:
-                        logger.error(f"Failed to auto-save configuration after configuring '{constraint_info['name']}': {e}")
-                    self.constraint_changed.emit()
-                    
-                    # Update local constraint info to reflect changes
-                    for i, constraint in enumerate(self.constraints):
-                        if constraint['name'] == constraint_info['name']:
-                            self.constraints[i]['config'] = config
-                            break
-                except Exception as e:
-                    logger.error(f"Error configuring constraint '{constraint_info['name']}': {e}")
+            if not self.controller:
+                logger.warning(f"Cannot configure constraint '{constraint_info['name']}': No controller available")
+                return
+                
+            try:
+                # Apply the configuration to the controller
+                self.controller.configure_constraint(constraint_info['name'], config)
+                
+                # Update local constraint info to reflect changes
+                for i, constraint in enumerate(self.constraints):
+                    if constraint['name'] == constraint_info['name']:
+                        self.constraints[i]['config'] = config
+                        logger.debug(f"Updated local configuration for '{constraint_info['name']}'")
+                        break
+                
+                # Notify about constraint change
+                self.constraint_changed.emit()
+                
+                # Log the change
+                logger.info(f"Configuration for constraint '{constraint_info['name']}' updated successfully")
+            except Exception as e:
+                logger.error(f"Error configuring constraint '{constraint_info['name']}': {e}")
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"Failed to configure constraint '{constraint_info['name']}': {str(e)}"
+                )
     
     def _save_configuration(self):
         """

@@ -148,11 +148,8 @@ class SolverManager:
             constraint_type: Name of the constraint type
             
         Returns:
-            Dict: Configuration dictionary, or empty dict if not found or disabled
+            Dict: Configuration dictionary, or empty dict if not found
         """
-        if not self.is_constraint_enabled(constraint_type):
-            return {}
-            
         # Start with default configuration
         config = self._default_configs.get(constraint_type, {}).copy()
         
@@ -212,23 +209,20 @@ class SolverManager:
         
         # Add constraints if requested
         if with_constraints:
+            logger.info("Adding constraints to solver:")
             for constraint_type, enabled in self._enabled_constraints.items():
+                # Get and log configuration for all constraints for debugging
+                config = self.get_constraint_configuration(constraint_type)
+                logger.info(f"Constraint '{constraint_type}': enabled={enabled}, config={config}")
+                
                 if enabled:
                     logger.debug(f"Adding constraint '{constraint_type}' to solver")
-                    
-                    # Get constraint configuration
-                    config = self.get_constraint_configuration(constraint_type)
-                    logger.debug(f"Constraint '{constraint_type}' configuration: {config}")
                     
                     # Get constraint class
                     constraint_class = self.get_constraint_class(constraint_type)
                     if constraint_class:
                         try:
-                            # Important: For supply constraint, explicitly log the cumulative parameter
-                            if constraint_type == 'supply' and 'cumulative' in config:
-                                logger.info(f"Creating supply constraint with cumulative={config['cumulative']}")
-                                
-                            # Ensure we're using a fresh copy of the config
+                            # Create a fresh constraint instance with the configuration
                             constraint = constraint_class(**config.copy())
                             solver.add_constraint(constraint_type, constraint)
                             logger.debug(f"Successfully added constraint '{constraint_type}'")
@@ -252,6 +246,7 @@ class SolverManager:
         result = {}
         for constraint_type, enabled in self._enabled_constraints.items():
             if enabled:
+                # Get full configuration regardless of enabled state
                 result[constraint_type] = self.get_constraint_configuration(constraint_type)
         return result
     
